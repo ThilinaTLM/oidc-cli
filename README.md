@@ -23,11 +23,61 @@ See the CLI in action with this quick demonstration showing profile creation and
 
 ## Installation
 
+### Pre-built Binaries
+
+Download the latest release for your platform from [GitHub Releases](https://github.com/ThilinaTLM/oidc-cli/releases):
+
+#### Linux
+
+```bash
+# Download the Linux binary
+wget https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.1.0/oidc-cli-x86_64-unknown-linux-gnu
+
+# Make it executable
+chmod +x oidc-cli-x86_64-unknown-linux-gnu
+
+# Move to PATH (optional)
+sudo mv oidc-cli-x86_64-unknown-linux-gnu /usr/local/bin/oidc-cli
+```
+
+#### Windows
+
+```cmd
+# Download the Windows binary
+curl -L -o oidc-cli.exe https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.1.0/oidc-cli-x86_64-pc-windows-msvc.exe
+
+# Run from current directory
+./oidc-cli.exe
+
+# Or move to PATH directory for global access
+```
+
+#### macOS
+
+```bash
+# Download the macOS binary
+curl -L -o oidc-cli https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.1.0/oidc-cli-x86_64-apple-darwin
+
+# Make it executable
+chmod +x oidc-cli
+
+# Move to PATH (optional)
+sudo mv oidc-cli /usr/local/bin/
+```
+
+### Build from Source
+
 ```bash
 cargo build --release
 ```
 
 The binary will be available at `target/release/oidc-cli` (or `oidc-cli.exe` on Windows).
+
+### Verify Installation
+
+```bash
+oidc-cli --help
+```
 
 ## Quick Start
 
