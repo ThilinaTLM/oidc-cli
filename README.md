@@ -163,33 +163,13 @@ ACCESS_TOKEN=$(oidc-cli login github --quiet | jq -r '.access_token')
 curl -H "Authorization: Bearer $ACCESS_TOKEN" https://api.github.com/user
 ```
 
-## Testing
+## Development
 
-Run the comprehensive test suite:
-```bash
-cargo test
-```
+For developers interested in contributing or understanding the technical details, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
-All 33 tests cover:
-- OAuth flow implementation
-- PKCE cryptographic functions
-- Profile management
-- Input validation
-- Error handling
-- CLI parsing
+## Repository
 
-## Architecture
-
-The tool is built with a modular architecture:
-
-- `auth/` - OAuth 2.0/OIDC authentication and PKCE implementation
-- `profile/` - Profile management, storage, and validation
-- `server.rs` - HTTP callback server for OAuth redirects
-- `browser.rs` - Cross-platform browser integration
-- `crypto.rs` - Secure random generation and PKCE functions
-- `error.rs` - Comprehensive error handling
-- `cli.rs` - Command-line interface definitions
-- `config.rs` - Configuration structures and validation
+GitHub: https://github.com/ThilinaTLM/oidc-cli
 
 ## License
 
