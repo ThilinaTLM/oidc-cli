@@ -28,7 +28,7 @@
         padding: 3rem 2rem;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
         text-align: center;
-        max-width: 400px;
+        max-width: 600px;
         width: 100%;
         position: relative;
         overflow: hidden;
@@ -68,6 +68,73 @@
         color: #718096;
         font-size: 1rem;
         line-height: 1.5;
+        margin-bottom: 1.5rem;
+      }
+
+      .token-section {
+        margin-top: 1.5rem;
+        width: 100%;
+      }
+
+      .token-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+        display: block;
+        text-align: left;
+      }
+
+      .token-display {
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        font-size: 0.65rem;
+        word-break: break-all;
+        background: #f8f9fa;
+        padding: 0.5rem;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        margin-bottom: 0.75rem;
+        color: #495057;
+        max-height: 120px;
+        overflow-y: auto;
+        line-height: 1.3;
+      }
+
+      .copy-button {
+        background: #4299e1;
+        color: white;
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .copy-button:hover {
+        background: #3182ce;
+        transform: translateY(-1px);
+      }
+
+      .copy-button:active {
+        transform: translateY(0);
+      }
+
+      .copy-button.copied {
+        background: #38a169;
+      }
+
+      .copy-icon {
+        width: 14px;
+        height: 14px;
+      }
+
+      .hidden {
+        display: none !important;
       }
 
       @keyframes bounceIn {
@@ -111,6 +178,99 @@
       <p class="message">
         You can now close this browser window and return to the terminal.
       </p>
+      
+      <div class="token-section" id="tokenSection">
+        <label class="token-label">Access Token:</label>
+        <div class="token-display" id="tokenDisplay">{access_token}</div>
+        <button class="copy-button" id="copyButton" onclick="copyToken()">
+          <svg class="copy-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+          </svg>
+          <span id="copyText">Copy Token</span>
+        </button>
+      </div>
     </div>
+    
+    <script>
+      const tokenSection = document.getElementById('tokenSection');
+      const tokenDisplay = document.getElementById('tokenDisplay');
+      let currentToken = '{access_token}';
+      
+      if (!currentToken || currentToken === '{access_token}') {
+        tokenSection.style.display = 'none';
+        pollForToken();
+      } else {
+        tokenSection.style.display = 'block';
+      }
+      
+      async function pollForToken() {
+        let attempts = 0;
+        const maxAttempts = 30;
+        
+        const poll = async () => {
+          if (attempts >= maxAttempts) {
+            return;
+          }
+          
+          try {
+            const response = await fetch('/token');
+            if (response.ok) {
+              const data = await response.json();
+              if (data.token) {
+                currentToken = data.token;
+                tokenDisplay.textContent = currentToken;
+                tokenSection.style.display = 'block';
+                return;
+              }
+            }
+          } catch (error) {
+            console.log('Polling for token...', error);
+          }
+          
+          attempts++;
+          setTimeout(poll, 1000);
+        };
+        
+        poll();
+      }
+      
+      async function copyToken() {
+        const copyButton = document.getElementById('copyButton');
+        const copyText = document.getElementById('copyText');
+        const token = currentToken;
+        
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(token);
+          } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = token;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+          }
+          
+          copyButton.classList.add('copied');
+          copyText.textContent = 'Copied!';
+          
+          setTimeout(() => {
+            copyButton.classList.remove('copied');
+            copyText.textContent = 'Copy Token';
+          }, 2000);
+          
+        } catch (err) {
+          console.error('Failed to copy token:', err);
+          copyText.textContent = 'Copy failed';
+          setTimeout(() => {
+            copyText.textContent = 'Copy Token';
+          }, 2000);
+        }
+      }
+    </script>
   </body>
 </html>

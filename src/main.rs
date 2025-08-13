@@ -113,7 +113,7 @@ async fn handle_login(
 
     open_browser_with_fallback(&auth_request.authorization_url, quiet)?;
 
-    let (code, state) = if is_localhost_redirect_uri(&profile.redirect_uri) {
+    let (code, state, server_opt) = if is_localhost_redirect_uri(&profile.redirect_uri) {
         // Use callback server for localhost URLs
         let port = port
             .or_else(|| extract_port_from_redirect_uri(&profile.redirect_uri))
@@ -145,11 +145,10 @@ async fn handle_login(
             )));
         }
 
-        (callback_result.code, callback_result.state)
+        (callback_result.code, callback_result.state, Some(server))
     } else {
-        // Manual code entry for non-localhost URLs
         let code = handle_manual_code_entry(quiet).await?;
-        (code, auth_request.state.clone())
+        (code, auth_request.state.clone(), None)
     };
 
     if verbose {
@@ -164,6 +163,17 @@ async fn handle_login(
             &auth_request.pkce_challenge.verifier,
         )
         .await?;
+
+    if let Some(server) = server_opt {
+        server.set_token(token_response.access_token.clone()).await;
+        
+        if !quiet {
+            println!("Token is now available in the browser. You can copy it from the success page.");
+            println!("The browser window will remain functional for 30 seconds...");
+        }
+        
+        tokio::time::sleep(tokio::time::Duration::from_secs(35)).await;
+    }
 
     if quiet {
         println!("{}", serde_json::to_string(&token_response).unwrap());

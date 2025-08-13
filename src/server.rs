@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, RwLock};
 use url::Url;
 
 use crate::error::Result;
@@ -22,12 +22,15 @@ pub struct CallbackResult {
     pub state: String,
     pub error: Option<String>,
     pub error_description: Option<String>,
+    #[allow(dead_code)]
+    pub access_token: Option<String>,
 }
 
 pub struct CallbackServer {
     addr: SocketAddr,
     sender: Option<mpsc::Sender<CallbackResult>>,
     callback_path: String,
+    token_store: Arc<RwLock<Option<String>>>,
 }
 
 impl CallbackServer {
@@ -38,6 +41,7 @@ impl CallbackServer {
             addr,
             sender: None,
             callback_path,
+            token_store: Arc::new(RwLock::new(None)),
         })
     }
 
@@ -48,13 +52,15 @@ impl CallbackServer {
         let tx_arc = Arc::new(tx);
         let addr = self.addr;
         let callback_path = Arc::new(self.callback_path.clone());
+        let token_store = self.token_store.clone();
 
         let make_svc = make_service_fn(move |_conn| {
             let tx = tx_arc.clone();
             let path = callback_path.clone();
+            let store = token_store.clone();
             async move {
                 Ok::<_, Infallible>(service_fn(move |req| {
-                    handle_request(req, tx.clone(), path.clone())
+                    handle_request(req, tx.clone(), path.clone(), store.clone())
                 }))
             }
         });
@@ -84,12 +90,18 @@ impl CallbackServer {
     pub fn get_port(&self) -> u16 {
         self.addr.port()
     }
+
+    pub async fn set_token(&self, token: String) {
+        let mut store = self.token_store.write().await;
+        *store = Some(token);
+    }
 }
 
 async fn handle_request(
     req: Request<Body>,
     tx: Arc<mpsc::Sender<CallbackResult>>,
     callback_path: Arc<String>,
+    token_store: Arc<RwLock<Option<String>>>,
 ) -> std::result::Result<Response<Body>, Infallible> {
     match req.method() {
         &Method::GET => {
@@ -107,6 +119,7 @@ async fn handle_request(
                             state: params.get("state").cloned().unwrap_or_default(),
                             error: Some(error.clone()),
                             error_description: error_description.clone(),
+                            access_token: None,
                         };
 
                         let _ = tx.send(result).await;
@@ -119,10 +132,18 @@ async fn handle_request(
                             state: state.clone(),
                             error: None,
                             error_description: None,
+                            access_token: None,
                         };
 
                         let _ = tx.send(result).await;
-                        return Ok(create_success_response());
+                        
+                        // Check if we have a token stored to include in the response
+                        let token_guard = token_store.read().await;
+                        if let Some(ref token) = *token_guard {
+                            return Ok(create_success_response_with_token(Some(token)));
+                        } else {
+                            return Ok(create_success_response());
+                        }
                     }
                 }
 
@@ -130,6 +151,25 @@ async fn handle_request(
                     StatusCode::BAD_REQUEST,
                     "Missing required parameters",
                 ));
+            }
+
+            // Handle token endpoint
+            if uri.path() == "/token" {
+                let token_guard = token_store.read().await;
+                if let Some(ref token) = *token_guard {
+                    return Ok(Response::builder()
+                        .status(StatusCode::OK)
+                        .header("Content-Type", "application/json; charset=utf-8")
+                        .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                        .body(Body::from(format!(r#"{{"token":"{}"}}"#, token)))
+                        .unwrap());
+                } else {
+                    return Ok(Response::builder()
+                        .status(StatusCode::NOT_FOUND)
+                        .header("Content-Type", "application/json; charset=utf-8")
+                        .body(Body::from(r#"{"error":"Token not available"}"#))
+                        .unwrap());
+                }
             }
 
             Ok(create_error_response_with_status(
@@ -161,7 +201,19 @@ fn parse_query_params(query: &str) -> HashMap<String, String> {
 }
 
 fn create_success_response() -> Response<Body> {
-    let html = include_str!("templates/success.html");
+    create_success_response_with_token(None)
+}
+
+fn create_success_response_with_token(access_token: Option<&str>) -> Response<Body> {
+    let mut html = include_str!("templates/success.html").to_string();
+    
+    if let Some(token) = access_token {
+        html = html.replace("{access_token}", token);
+        html = html.replace("{show_copy_button}", "true");
+    } else {
+        html = html.replace("{access_token}", "");
+        html = html.replace("{show_copy_button}", "false");
+    }
 
     Response::builder()
         .status(StatusCode::OK)
