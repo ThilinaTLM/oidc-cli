@@ -567,7 +567,7 @@ fn handle_import(
     Ok(())
 }
 
-fn is_localhost_redirect_uri(uri: &str) -> bool {
+pub fn is_localhost_redirect_uri(uri: &str) -> bool {
     if let Ok(url) = Url::parse(uri) {
         if let Some(host) = url.host() {
             match host {
@@ -586,7 +586,7 @@ fn is_localhost_redirect_uri(uri: &str) -> bool {
     false
 }
 
-fn extract_port_from_redirect_uri(uri: &str) -> Option<u16> {
+pub fn extract_port_from_redirect_uri(uri: &str) -> Option<u16> {
     if let Ok(url) = Url::parse(uri) {
         if is_localhost_redirect_uri(uri) {
             return url.port().or(Some(80));
@@ -595,7 +595,7 @@ fn extract_port_from_redirect_uri(uri: &str) -> Option<u16> {
     None
 }
 
-fn parse_query_params(query: &str) -> HashMap<String, String> {
+pub fn parse_query_params(query: &str) -> HashMap<String, String> {
     let mut params = HashMap::new();
 
     for pair in query.split('&') {
@@ -733,56 +733,3 @@ fn prompt_optional_input_with_current(
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_is_localhost_redirect_uri() {
-        assert!(is_localhost_redirect_uri("http://localhost:8080/callback"));
-        assert!(is_localhost_redirect_uri("http://127.0.0.1:8383/callback"));
-        assert!(is_localhost_redirect_uri("https://localhost/callback"));
-        assert!(is_localhost_redirect_uri("http://[::1]:8080/callback"));
-        assert!(!is_localhost_redirect_uri("https://example.com/callback"));
-        assert!(!is_localhost_redirect_uri(
-            "https://auth.company.com/callback"
-        ));
-        assert!(!is_localhost_redirect_uri("invalid-uri"));
-    }
-
-    #[test]
-    fn test_extract_port_from_redirect_uri() {
-        assert_eq!(
-            extract_port_from_redirect_uri("http://localhost:8383/callback"),
-            Some(8383)
-        );
-        assert_eq!(
-            extract_port_from_redirect_uri("http://127.0.0.1:9000/callback"),
-            Some(9000)
-        );
-        assert_eq!(
-            extract_port_from_redirect_uri("http://localhost/callback"),
-            Some(80)
-        );
-        assert_eq!(
-            extract_port_from_redirect_uri("https://localhost/callback"),
-            Some(80)
-        );
-        assert_eq!(
-            extract_port_from_redirect_uri("https://example.com/callback"),
-            None
-        );
-        assert_eq!(extract_port_from_redirect_uri("invalid-uri"), None);
-    }
-
-    #[test]
-    fn test_parse_query_params() {
-        let params = parse_query_params("code=abc123&state=xyz789&scope=openid%20profile");
-        assert_eq!(params.get("code"), Some(&"abc123".to_string()));
-        assert_eq!(params.get("state"), Some(&"xyz789".to_string()));
-        assert_eq!(params.get("scope"), Some(&"openid profile".to_string()));
-
-        let empty_params = parse_query_params("");
-        assert!(empty_params.is_empty());
-    }
-}

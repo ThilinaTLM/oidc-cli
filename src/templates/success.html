@@ -85,38 +85,56 @@
         text-align: left;
       }
 
+      .token-container {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+      }
+
+      .token-header {
+        background: #f1f3f4;
+        border-bottom: 1px solid #e9ecef;
+        padding: 0.5rem 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #495057;
+      }
+
       .token-display {
         font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-        font-size: 0.65rem;
+        font-size: 0.75rem;
         word-break: break-all;
         background: #f8f9fa;
-        padding: 0.5rem;
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
-        margin-bottom: 0.75rem;
         color: #495057;
-        max-height: 120px;
+        padding: .2rem;
+        border: none;
+        max-height: 150px;
         overflow-y: auto;
-        line-height: 1.3;
+        line-height: 1.4;
+        margin: 0;
       }
 
       .copy-button {
-        background: #4299e1;
+        background: #6c757d;
         color: white;
         border: none;
-        padding: 0.4rem 0.8rem;
+        padding: 0.25rem 0.5rem;
         border-radius: 4px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 0.25rem;
       }
 
       .copy-button:hover {
-        background: #3182ce;
+        background: #5a6268;
         transform: translateY(-1px);
       }
 
@@ -180,15 +198,19 @@
       </p>
       
       <div class="token-section" id="tokenSection">
-        <label class="token-label">Access Token:</label>
-        <div class="token-display" id="tokenDisplay">{access_token}</div>
-        <button class="copy-button" id="copyButton" onclick="copyToken()">
-          <svg class="copy-icon" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
-            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
-          </svg>
-          <span id="copyText">Copy Token</span>
-        </button>
+        <div class="token-container">
+          <div class="token-header">
+            <span>Access Token</span>
+            <button class="copy-button" id="copyButton" onclick="copyToken()">
+              <svg class="copy-icon" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+              </svg>
+              <span id="copyText">Copy</span>
+            </button>
+          </div>
+          <div class="token-display" id="tokenDisplay">{access_token}</div>
+        </div>
       </div>
     </div>
     
@@ -260,7 +282,7 @@
           
           setTimeout(() => {
             copyButton.classList.remove('copied');
-            copyText.textContent = 'Copy Token';
+            copyText.textContent = 'Copy';
           }, 2000);
           
         } catch (err) {
