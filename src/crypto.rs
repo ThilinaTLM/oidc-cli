@@ -13,7 +13,7 @@ impl PkceChallenge {
     pub fn new() -> Result<Self> {
         let verifier = generate_code_verifier()?;
         let challenge = create_code_challenge(&verifier)?;
-        
+
         Ok(PkceChallenge {
             verifier,
             challenge,
@@ -25,15 +25,15 @@ pub fn generate_code_verifier() -> Result<String> {
     let mut rng = rand::thread_rng();
     let mut bytes = vec![0u8; 32];
     rng.fill(&mut bytes[..]);
-    
+
     let verifier = URL_SAFE_NO_PAD.encode(&bytes);
-    
+
     if verifier.len() < 43 {
         return Err(crate::error::OidcError::Config(
             "Code verifier must be at least 43 characters".to_string(),
         ));
     }
-    
+
     Ok(verifier)
 }
 
@@ -41,7 +41,7 @@ pub fn create_code_challenge(verifier: &str) -> Result<String> {
     let mut hasher = Sha256::new();
     hasher.update(verifier.as_bytes());
     let digest = hasher.finalize();
-    
+
     Ok(URL_SAFE_NO_PAD.encode(digest))
 }
 
@@ -49,7 +49,7 @@ pub fn generate_state() -> Result<String> {
     let mut rng = rand::thread_rng();
     let mut bytes = vec![0u8; 16];
     rng.fill(&mut bytes[..]);
-    
+
     Ok(URL_SAFE_NO_PAD.encode(&bytes))
 }
 

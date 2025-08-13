@@ -40,9 +40,7 @@ pub async fn discover_endpoints(discovery_uri: &str) -> Result<DiscoveryDocument
     let url = Url::parse(discovery_uri)
         .map_err(|_| OidcError::Discovery(format!("Invalid discovery URI: {discovery_uri}")))?;
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()?;
+    let client = Client::builder().timeout(Duration::from_secs(30)).build()?;
 
     let response = client
         .get(url)
@@ -57,7 +55,9 @@ pub async fn discover_endpoints(discovery_uri: &str) -> Result<DiscoveryDocument
         )));
     }
 
-    let discovery_doc: DiscoveryDocument = response.json().await
+    let discovery_doc: DiscoveryDocument = response
+        .json()
+        .await
         .map_err(|e| OidcError::Discovery(format!("Failed to parse discovery document: {e}")))?;
 
     validate_discovery_document(&discovery_doc)?;
@@ -68,19 +68,19 @@ pub async fn discover_endpoints(discovery_uri: &str) -> Result<DiscoveryDocument
 fn validate_discovery_document(doc: &DiscoveryDocument) -> Result<()> {
     if doc.authorization_endpoint.is_empty() {
         return Err(OidcError::Discovery(
-            "Missing authorization_endpoint in discovery document".to_string()
+            "Missing authorization_endpoint in discovery document".to_string(),
         ));
     }
 
     if doc.token_endpoint.is_empty() {
         return Err(OidcError::Discovery(
-            "Missing token_endpoint in discovery document".to_string()
+            "Missing token_endpoint in discovery document".to_string(),
         ));
     }
 
     if doc.issuer.is_empty() {
         return Err(OidcError::Discovery(
-            "Missing issuer in discovery document".to_string()
+            "Missing issuer in discovery document".to_string(),
         ));
     }
 
@@ -92,7 +92,7 @@ fn validate_discovery_document(doc: &DiscoveryDocument) -> Result<()> {
 
     if !doc.supports_authorization_code() {
         return Err(OidcError::Discovery(
-            "Authorization code flow not supported".to_string()
+            "Authorization code flow not supported".to_string(),
         ));
     }
 

@@ -48,7 +48,7 @@ impl CallbackServer {
         let tx_arc = Arc::new(tx);
         let addr = self.addr;
         let callback_path = Arc::new(self.callback_path.clone());
-        
+
         let make_svc = make_service_fn(move |_conn| {
             let tx = tx_arc.clone();
             let path = callback_path.clone();
@@ -61,7 +61,7 @@ impl CallbackServer {
 
         tokio::spawn(async move {
             let server = Server::bind(&addr).serve(make_svc);
-            
+
             if let Err(e) = server.await {
                 eprintln!("Server error: {e}");
             }
@@ -72,7 +72,12 @@ impl CallbackServer {
 
     #[allow(dead_code)]
     pub fn get_redirect_uri(&self) -> String {
-        format!("http://{}:{}{}", self.addr.ip(), self.addr.port(), self.callback_path)
+        format!(
+            "http://{}:{}{}",
+            self.addr.ip(),
+            self.addr.port(),
+            self.callback_path
+        )
     }
 
     #[allow(dead_code)]
@@ -89,11 +94,11 @@ async fn handle_request(
     match req.method() {
         &Method::GET => {
             let uri = req.uri();
-            
+
             if uri.path() == callback_path.as_str() {
                 if let Some(query) = uri.query() {
                     let params = parse_query_params(query);
-                    
+
                     if let Some(error) = params.get("error") {
                         let error_description = params.get("error_description").cloned();
                         let error_desc_ref = error_description.as_deref();
@@ -103,11 +108,11 @@ async fn handle_request(
                             error: Some(error.clone()),
                             error_description: error_description.clone(),
                         };
-                        
+
                         let _ = tx.send(result).await;
                         return Ok(create_error_response(error, error_desc_ref));
                     }
-                    
+
                     if let (Some(code), Some(state)) = (params.get("code"), params.get("state")) {
                         let result = CallbackResult {
                             code: code.clone(),
@@ -115,44 +120,43 @@ async fn handle_request(
                             error: None,
                             error_description: None,
                         };
-                        
+
                         let _ = tx.send(result).await;
                         return Ok(create_success_response());
                     }
                 }
-                
+
                 return Ok(create_error_response_with_status(
                     StatusCode::BAD_REQUEST,
-                    "Missing required parameters"
+                    "Missing required parameters",
                 ));
             }
-            
+
             Ok(create_error_response_with_status(
                 StatusCode::NOT_FOUND,
-                "Not Found"
+                "Not Found",
             ))
         }
         _ => Ok(create_error_response_with_status(
             StatusCode::METHOD_NOT_ALLOWED,
-            "Method Not Allowed"
+            "Method Not Allowed",
         )),
     }
 }
 
 fn parse_query_params(query: &str) -> HashMap<String, String> {
     let mut params = HashMap::new();
-    
+
     for pair in query.split('&') {
         if let Some((key, value)) = pair.split_once('=') {
-            if let (Ok(decoded_key), Ok(decoded_value)) = (
-                urlencoding::decode(key),
-                urlencoding::decode(value)
-            ) {
+            if let (Ok(decoded_key), Ok(decoded_value)) =
+                (urlencoding::decode(key), urlencoding::decode(value))
+            {
                 params.insert(decoded_key.to_string(), decoded_value.to_string());
             }
         }
     }
-    
+
     params
 }
 
@@ -202,8 +206,9 @@ fn create_success_response() -> Response<Body> {
 
 fn create_error_response(error: &str, error_description: Option<&str>) -> Response<Body> {
     let description = error_description.unwrap_or("An authentication error occurred");
-    
-    let html = format!(r#"
+
+    let html = format!(
+        r#"
 <!DOCTYPE html>
 <html>
 <head>
@@ -241,7 +246,8 @@ fn create_error_response(error: &str, error_description: Option<&str>) -> Respon
     </div>
 </body>
 </html>
-"#);
+"#
+    );
 
     Response::builder()
         .status(StatusCode::BAD_REQUEST)
@@ -252,7 +258,8 @@ fn create_error_response(error: &str, error_description: Option<&str>) -> Respon
 }
 
 fn create_error_response_with_status(status: StatusCode, message: &str) -> Response<Body> {
-    let html = format!(r#"
+    let html = format!(
+        r#"
 <!DOCTYPE html>
 <html>
 <head>
@@ -283,7 +290,10 @@ fn create_error_response_with_status(status: StatusCode, message: &str) -> Respo
     </div>
 </body>
 </html>
-"#, status.as_u16(), message);
+"#,
+        status.as_u16(),
+        message
+    );
 
     Response::builder()
         .status(status)
@@ -300,7 +310,7 @@ mod tests {
     fn test_parse_query_params() {
         let query = "code=abc123&state=xyz789&scope=openid%20profile";
         let params = parse_query_params(query);
-        
+
         assert_eq!(params.get("code"), Some(&"abc123".to_string()));
         assert_eq!(params.get("state"), Some(&"xyz789".to_string()));
         assert_eq!(params.get("scope"), Some(&"openid profile".to_string()));
@@ -310,7 +320,7 @@ mod tests {
     fn test_callback_server_creation() {
         let server = CallbackServer::new(8080, "http://localhost:8080/callback");
         assert!(server.is_ok());
-        
+
         let server = server.unwrap();
         assert_eq!(server.get_port(), 8080);
         assert_eq!(server.get_redirect_uri(), "http://127.0.0.1:8080/callback");
@@ -318,9 +328,18 @@ mod tests {
 
     #[test]
     fn test_extract_path_from_redirect_uri() {
-        assert_eq!(extract_path_from_redirect_uri("http://localhost:8383/docs/ui"), "/docs/ui");
-        assert_eq!(extract_path_from_redirect_uri("http://localhost:8080/callback"), "/callback");
-        assert_eq!(extract_path_from_redirect_uri("http://localhost:8080/"), "/");
+        assert_eq!(
+            extract_path_from_redirect_uri("http://localhost:8383/docs/ui"),
+            "/docs/ui"
+        );
+        assert_eq!(
+            extract_path_from_redirect_uri("http://localhost:8080/callback"),
+            "/callback"
+        );
+        assert_eq!(
+            extract_path_from_redirect_uri("http://localhost:8080/"),
+            "/"
+        );
         assert_eq!(extract_path_from_redirect_uri("invalid-uri"), "/callback");
     }
 

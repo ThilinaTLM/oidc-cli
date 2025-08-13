@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn test_cli_parsing() {
         let cli = Cli::try_parse_from(["oidc-cli", "login", "test-profile"]).unwrap();
-        
+
         match cli.command {
             Commands::Login { profile, .. } => {
                 assert_eq!(profile, Some("test-profile".to_string()));

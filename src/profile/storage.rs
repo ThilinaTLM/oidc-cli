@@ -4,7 +4,7 @@ use std::path::Path;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-use crate::config::{Config, get_config_dir, get_config_file_path};
+use crate::config::{get_config_dir, get_config_file_path, Config};
 use crate::error::{OidcError, Result};
 
 pub struct ProfileStorage;
@@ -12,7 +12,7 @@ pub struct ProfileStorage;
 impl ProfileStorage {
     pub fn load_config() -> Result<Config> {
         let config_path = get_config_file_path()?;
-        
+
         if !config_path.exists() {
             return Ok(Config::new());
         }
@@ -28,7 +28,8 @@ impl ProfileStorage {
             .map_err(|e| OidcError::Profile(format!("Failed to parse config file: {e}")))?;
 
         for (name, profile) in &config.profiles {
-            profile.validate()
+            profile
+                .validate()
                 .map_err(|e| OidcError::Profile(format!("Invalid profile '{name}': {e}")))?;
         }
 
@@ -40,8 +41,9 @@ impl ProfileStorage {
         let config_path = get_config_file_path()?;
 
         if !config_dir.exists() {
-            fs::create_dir_all(&config_dir)
-                .map_err(|e| OidcError::Profile(format!("Failed to create config directory: {e}")))?;
+            fs::create_dir_all(&config_dir).map_err(|e| {
+                OidcError::Profile(format!("Failed to create config directory: {e}"))
+            })?;
         }
 
         let json = serde_json::to_string_pretty(config)
@@ -69,7 +71,9 @@ impl ProfileStorage {
 
     pub fn import_config(file_path: &Path) -> Result<Config> {
         if !file_path.exists() {
-            return Err(OidcError::Profile(format!("Import file not found: {file_path:?}")));
+            return Err(OidcError::Profile(format!(
+                "Import file not found: {file_path:?}"
+            )));
         }
 
         let content = fs::read_to_string(file_path)
@@ -79,8 +83,9 @@ impl ProfileStorage {
             .map_err(|e| OidcError::Profile(format!("Failed to parse import file: {e}")))?;
 
         for (name, profile) in &config.profiles {
-            profile.validate()
-                .map_err(|e| OidcError::Profile(format!("Invalid imported profile '{name}': {e}")))?;
+            profile.validate().map_err(|e| {
+                OidcError::Profile(format!("Invalid imported profile '{name}': {e}"))
+            })?;
         }
 
         Ok(config)
@@ -90,13 +95,13 @@ impl ProfileStorage {
     fn set_secure_permissions(file_path: &Path) -> Result<()> {
         let metadata = fs::metadata(file_path)
             .map_err(|e| OidcError::Profile(format!("Failed to get file metadata: {e}")))?;
-        
+
         let mut permissions = metadata.permissions();
         permissions.set_mode(0o600);
-        
+
         fs::set_permissions(file_path, permissions)
             .map_err(|e| OidcError::Profile(format!("Failed to set file permissions: {e}")))?;
-        
+
         Ok(())
     }
 
@@ -131,15 +136,18 @@ mod tests {
     fn test_export_import_config() {
         let temp_dir = tempdir().unwrap();
         let export_path = temp_dir.path().join("test_export.json");
-        
+
         let original_config = create_test_config();
-        
+
         ProfileStorage::export_config(&original_config, &export_path).unwrap();
         assert!(export_path.exists());
-        
+
         let imported_config = ProfileStorage::import_config(&export_path).unwrap();
-        
-        assert_eq!(original_config.profiles.len(), imported_config.profiles.len());
+
+        assert_eq!(
+            original_config.profiles.len(),
+            imported_config.profiles.len()
+        );
         assert!(imported_config.profiles.contains_key("test"));
     }
 
@@ -147,7 +155,7 @@ mod tests {
     fn test_import_nonexistent_file() {
         let temp_dir = tempdir().unwrap();
         let nonexistent_path = temp_dir.path().join("nonexistent.json");
-        
+
         let result = ProfileStorage::import_config(&nonexistent_path);
         assert!(result.is_err());
     }

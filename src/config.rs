@@ -34,22 +34,26 @@ impl Profile {
             .map_err(|_| OidcError::InvalidRedirectUri(self.redirect_uri.clone()))?;
 
         if let Some(ref discovery_uri) = self.discovery_uri {
-            Url::parse(discovery_uri)
-                .map_err(|_| OidcError::Config(format!("Invalid discovery URI: {discovery_uri}")))?;
+            Url::parse(discovery_uri).map_err(|_| {
+                OidcError::Config(format!("Invalid discovery URI: {discovery_uri}"))
+            })?;
         }
 
         if let Some(ref auth_endpoint) = self.authorization_endpoint {
-            Url::parse(auth_endpoint)
-                .map_err(|_| OidcError::Config(format!("Invalid authorization endpoint: {auth_endpoint}")))?;
+            Url::parse(auth_endpoint).map_err(|_| {
+                OidcError::Config(format!("Invalid authorization endpoint: {auth_endpoint}"))
+            })?;
         }
 
         if let Some(ref token_endpoint) = self.token_endpoint {
-            Url::parse(token_endpoint)
-                .map_err(|_| OidcError::Config(format!("Invalid token endpoint: {token_endpoint}")))?;
+            Url::parse(token_endpoint).map_err(|_| {
+                OidcError::Config(format!("Invalid token endpoint: {token_endpoint}"))
+            })?;
         }
 
-        if self.discovery_uri.is_none() 
-            && (self.authorization_endpoint.is_none() || self.token_endpoint.is_none()) {
+        if self.discovery_uri.is_none()
+            && (self.authorization_endpoint.is_none() || self.token_endpoint.is_none())
+        {
             return Err(OidcError::Config(
                 "Either discovery_uri or both authorization_endpoint and token_endpoint must be provided".to_string()
             ));
@@ -73,32 +77,34 @@ impl Config {
 
     pub fn add_profile(&mut self, name: String, profile: Profile) -> Result<()> {
         profile.validate()?;
-        
+
         if self.profiles.contains_key(&name) {
             return Err(OidcError::ProfileExists(name));
         }
-        
+
         self.profiles.insert(name, profile);
         Ok(())
     }
 
     pub fn get_profile(&self, name: &str) -> Result<&Profile> {
-        self.profiles.get(name)
+        self.profiles
+            .get(name)
             .ok_or_else(|| OidcError::ProfileNotFound(name.to_string()))
     }
 
     pub fn remove_profile(&mut self, name: &str) -> Result<Profile> {
-        self.profiles.remove(name)
+        self.profiles
+            .remove(name)
             .ok_or_else(|| OidcError::ProfileNotFound(name.to_string()))
     }
 
     pub fn update_profile(&mut self, name: String, profile: Profile) -> Result<()> {
         profile.validate()?;
-        
+
         if !self.profiles.contains_key(&name) {
             return Err(OidcError::ProfileNotFound(name));
         }
-        
+
         self.profiles.insert(name, profile);
         Ok(())
     }
@@ -107,7 +113,7 @@ impl Config {
         if self.profiles.contains_key(&new_name) {
             return Err(OidcError::ProfileExists(new_name));
         }
-        
+
         let profile = self.remove_profile(old_name)?;
         self.profiles.insert(new_name, profile);
         Ok(())
@@ -173,7 +179,7 @@ mod tests {
     fn test_config_add_profile() {
         let mut config = Config::new();
         let profile = create_test_profile();
-        
+
         assert!(config.add_profile("test".to_string(), profile).is_ok());
         assert!(config.get_profile("test").is_ok());
     }
@@ -182,8 +188,10 @@ mod tests {
     fn test_config_duplicate_profile() {
         let mut config = Config::new();
         let profile = create_test_profile();
-        
-        config.add_profile("test".to_string(), profile.clone()).unwrap();
+
+        config
+            .add_profile("test".to_string(), profile.clone())
+            .unwrap();
         assert!(config.add_profile("test".to_string(), profile).is_err());
     }
 }
