@@ -161,40 +161,7 @@ fn parse_query_params(query: &str) -> HashMap<String, String> {
 }
 
 fn create_success_response() -> Response<Body> {
-    let html = r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Authentication Successful</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            background-color: #f5f5f5; 
-        }
-        .container { 
-            text-align: center; 
-            background: white; 
-            padding: 2rem; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-        }
-        .success { color: #28a745; }
-        .message { margin-top: 1rem; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="success">✓ Authentication Successful!</h1>
-        <p class="message">You can now close this browser window and return to the terminal.</p>
-    </div>
-</body>
-</html>
-"#;
+    let html = include_str!("templates/success.html");
 
     Response::builder()
         .status(StatusCode::OK)
@@ -207,47 +174,9 @@ fn create_success_response() -> Response<Body> {
 fn create_error_response(error: &str, error_description: Option<&str>) -> Response<Body> {
     let description = error_description.unwrap_or("An authentication error occurred");
 
-    let html = format!(
-        r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Authentication Error</title>
-    <style>
-        body {{ 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            background-color: #f5f5f5; 
-        }}
-        .container {{ 
-            text-align: center; 
-            background: white; 
-            padding: 2rem; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-        }}
-        .error {{ color: #dc3545; }}
-        .message {{ margin-top: 1rem; color: #666; }}
-        .details {{ margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="error">✗ Authentication Failed</h1>
-        <p class="message">Please close this browser window and try again.</p>
-        <div class="details">
-            <strong>Error:</strong> {error}<br>
-            <strong>Description:</strong> {description}
-        </div>
-    </div>
-</body>
-</html>
-"#
-    );
+    let html = include_str!("templates/error.html")
+        .replace("{error}", error)
+        .replace("{description}", description);
 
     Response::builder()
         .status(StatusCode::BAD_REQUEST)
@@ -258,42 +187,9 @@ fn create_error_response(error: &str, error_description: Option<&str>) -> Respon
 }
 
 fn create_error_response_with_status(status: StatusCode, message: &str) -> Response<Body> {
-    let html = format!(
-        r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Error</title>
-    <style>
-        body {{ 
-            font-family: Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            background-color: #f5f5f5; 
-        }}
-        .container {{ 
-            text-align: center; 
-            background: white; 
-            padding: 2rem; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-        }}
-        .error {{ color: #dc3545; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="error">{} - {}</h1>
-    </div>
-</body>
-</html>
-"#,
-        status.as_u16(),
-        message
-    );
+    let html = include_str!("templates/generic_error.html")
+        .replace("{status_code}", &status.as_u16().to_string())
+        .replace("{message}", message);
 
     Response::builder()
         .status(status)
