@@ -149,7 +149,6 @@ async fn handle_request(
                 ));
             }
 
-            // Handle token endpoint
             if uri.path() == "/token" {
                 let token_guard = token_store.read().await;
                 if let Some(ref token) = *token_guard {

@@ -222,7 +222,6 @@ async fn handle_login(
             )
             .await?;
 
-        // Display tokens immediately after successful exchange
         if quiet {
             println!("{}", serde_json::to_string(&token_response).unwrap());
         } else {
@@ -679,7 +678,6 @@ async fn handle_manual_code_entry(quiet: bool) -> Result<String> {
             continue;
         }
 
-        // Try to parse as a URL first
         if let Ok(url) = Url::parse(input) {
             if let Some(query) = url.query() {
                 let params = parse_query_params(query);
