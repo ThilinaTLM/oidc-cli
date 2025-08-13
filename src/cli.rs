@@ -114,10 +114,6 @@ impl Cli {
     pub fn is_quiet(&self) -> bool {
         self.quiet
     }
-
-    pub fn should_show_progress(&self) -> bool {
-        !self.quiet
-    }
 }
 
 #[cfg(test)]

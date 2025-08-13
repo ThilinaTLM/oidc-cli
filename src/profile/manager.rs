@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::path::Path;
 
 use crate::config::{Config, Profile};
@@ -203,7 +205,6 @@ impl Clone for ProfileManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
 
     fn create_test_profile_manager() -> ProfileManager {
         ProfileManager {

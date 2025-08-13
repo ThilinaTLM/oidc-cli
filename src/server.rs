@@ -4,10 +4,10 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::mpsc;
 use url::Url;
 
-use crate::error::{OidcError, Result};
+use crate::error::Result;
 
 fn extract_path_from_redirect_uri(redirect_uri: &str) -> String {
     if let Ok(url) = Url::parse(redirect_uri) {

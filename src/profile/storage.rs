@@ -110,7 +110,6 @@ impl ProfileStorage {
 mod tests {
     use super::*;
     use crate::config::Profile;
-    use std::collections::HashMap;
     use tempfile::tempdir;
 
     fn create_test_config() -> Config {

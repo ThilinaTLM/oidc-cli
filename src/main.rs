@@ -13,7 +13,6 @@ use error::{OidcError, Result};
 use profile::ProfileManager;
 use std::collections::HashMap;
 use std::io::{self, Write};
-use std::path::Path;
 use tokio::time::{timeout, Duration};
 use url::Url;
 

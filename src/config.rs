@@ -57,10 +57,6 @@ impl Profile {
 
         Ok(())
     }
-
-    pub fn is_confidential_client(&self) -> bool {
-        self.client_secret.is_some()
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

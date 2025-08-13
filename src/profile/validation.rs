@@ -1,5 +1,4 @@
 use url::Url;
-use crate::config::Profile;
 use crate::error::{OidcError, Result};
 
 pub fn validate_profile_input(
