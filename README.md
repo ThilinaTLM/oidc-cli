@@ -2,16 +2,18 @@
 
 A command-line application for OAuth 2.0/OpenID Connect authentication with PKCE support.
 
+[![CI](https://github.com/ThilinaTLM/oidc-cli/actions/workflows/ci.yaml/badge.svg)](https://github.com/ThilinaTLM/oidc-cli/actions/workflows/ci.yaml)
+
 ## Features
 
-- ✅ **OAuth 2.0/OIDC Authentication** - Full support for Authorization Code flow with PKCE
-- ✅ **Profile Management** - Create, edit, delete, and manage multiple authentication profiles
-- ✅ **Discovery Support** - Automatic endpoint discovery via OIDC discovery URIs
-- ✅ **Security First** - PKCE with SHA256, state parameter validation, secure random generation
-- ✅ **Cross-platform** - Windows, macOS, and Linux support
-- ✅ **Browser Integration** - Automatic browser opening with fallback support
-- ✅ **Import/Export** - Backup and share profiles securely
-- ✅ **Interactive & Scriptable** - Both interactive and quiet modes supported
+- **OAuth 2.0/OIDC Authentication** - Full support for Authorization Code flow with PKCE
+- **Profile Management** - Create, edit, delete, and manage multiple authentication profiles
+- **Discovery Support** - Automatic endpoint discovery via OIDC discovery URIs
+- **Security First** - PKCE with SHA256, state parameter validation, secure random generation
+- **Cross-platform** - Windows, macOS, and Linux support
+- **Browser Integration** - Automatic browser opening with fallback support
+- **Import/Export** - Backup and share profiles securely
+- **Interactive & Scriptable** - Both interactive and quiet modes supported
 
 ## Installation
 
@@ -24,16 +26,19 @@ The binary will be available at `target/release/oidc-cli` (or `oidc-cli.exe` on 
 ## Quick Start
 
 1. **Create a profile**:
+
 ```bash
 oidc-cli create my-profile
 ```
 
 2. **List profiles**:
+
 ```bash
 oidc-cli list
 ```
 
 3. **Authenticate**:
+
 ```bash
 oidc-cli login my-profile
 ```
@@ -72,7 +77,9 @@ oidc-cli login my-profile
 Profiles support two configuration methods:
 
 ### 1. Discovery-based (Recommended)
+
 Uses OIDC discovery to automatically find endpoints:
+
 ```json
 {
   "discovery_uri": "https://auth.example.com/.well-known/openid-configuration",
@@ -84,11 +91,13 @@ Uses OIDC discovery to automatically find endpoints:
 ```
 
 ### 2. Manual Endpoints
+
 Specify endpoints manually:
+
 ```json
 {
   "client_id": "your-client-id",
-  "client_secret": "optional-secret", 
+  "client_secret": "optional-secret",
   "redirect_uri": "http://localhost:8080/callback",
   "scope": "openid profile email",
   "authorization_endpoint": "https://auth.example.com/authorize",
@@ -107,14 +116,15 @@ Specify endpoints manually:
 ## Examples
 
 ### Interactive Profile Creation
+
 ```bash
 $ oidc-cli create github
 Creating new profile 'github'
 Press Ctrl+C to cancel at any time
 
 Client ID: your-github-client-id
-Client Secret (optional): 
-Redirect URI [http://localhost:8080/callback]: 
+Client Secret (optional):
+Redirect URI [http://localhost:8080/callback]:
 Scope [openid profile email]: user:email
 
 Choose configuration method:
@@ -129,6 +139,7 @@ Token Endpoint: https://github.com/login/oauth/access_token
 ```
 
 ### Non-interactive Profile Creation
+
 ```bash
 oidc-cli create google \
   --client-id "your-google-client" \
@@ -139,6 +150,7 @@ oidc-cli create google \
 ```
 
 ### Authentication Flow
+
 ```bash
 $ oidc-cli login github
 Initiating OAuth 2.0 authorization flow...
@@ -155,6 +167,7 @@ Scope: user:email
 ```
 
 ### Scripting Support
+
 ```bash
 # Get just the token response as JSON
 ACCESS_TOKEN=$(oidc-cli login github --quiet | jq -r '.access_token')
