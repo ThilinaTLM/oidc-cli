@@ -112,14 +112,12 @@ impl OAuthClient {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
             return Err(OidcError::Auth(format!(
-                "Token exchange failed with status {}: {}",
-                status,
-                error_text
+                "Token exchange failed with status {status}: {error_text}"
             )));
         }
 
         let token_response: TokenResponse = response.json().await
-            .map_err(|e| OidcError::Auth(format!("Failed to parse token response: {}", e)))?;
+            .map_err(|e| OidcError::Auth(format!("Failed to parse token response: {e}")))?;
 
         validate_token_response(&token_response)?;
 

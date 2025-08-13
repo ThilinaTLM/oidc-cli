@@ -63,17 +63,19 @@ impl CallbackServer {
             let server = Server::bind(&addr).serve(make_svc);
             
             if let Err(e) = server.await {
-                eprintln!("Server error: {}", e);
+                eprintln!("Server error: {e}");
             }
         });
 
         Ok(rx)
     }
 
+    #[allow(dead_code)]
     pub fn get_redirect_uri(&self) -> String {
         format!("http://{}:{}{}", self.addr.ip(), self.addr.port(), self.callback_path)
     }
 
+    #[allow(dead_code)]
     pub fn get_port(&self) -> u16 {
         self.addr.port()
     }
@@ -233,13 +235,13 @@ fn create_error_response(error: &str, error_description: Option<&str>) -> Respon
         <h1 class="error">✗ Authentication Failed</h1>
         <p class="message">Please close this browser window and try again.</p>
         <div class="details">
-            <strong>Error:</strong> {}<br>
-            <strong>Description:</strong> {}
+            <strong>Error:</strong> {error}<br>
+            <strong>Description:</strong> {description}
         </div>
     </div>
 </body>
 </html>
-"#, error, description);
+"#);
 
     Response::builder()
         .status(StatusCode::BAD_REQUEST)

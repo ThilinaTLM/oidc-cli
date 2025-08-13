@@ -7,6 +7,17 @@ use crate::error::{OidcError, Result};
 use crate::profile::storage::ProfileStorage;
 use crate::profile::validation::{validate_profile_input, sanitize_input};
 
+pub struct ProfileParams {
+    pub name: String,
+    pub client_id: String,
+    pub client_secret: Option<String>,
+    pub redirect_uri: String,
+    pub scope: String,
+    pub discovery_uri: Option<String>,
+    pub authorization_endpoint: Option<String>,
+    pub token_endpoint: Option<String>,
+}
+
 pub struct ProfileManager {
     config: Config,
 }
@@ -25,26 +36,16 @@ impl ProfileManager {
         self.config.get_profile(name)
     }
 
-    pub fn create_profile(
-        &mut self,
-        name: String,
-        client_id: String,
-        client_secret: Option<String>,
-        redirect_uri: String,
-        scope: String,
-        discovery_uri: Option<String>,
-        authorization_endpoint: Option<String>,
-        token_endpoint: Option<String>,
-    ) -> Result<()> {
-        let name = sanitize_input(&name);
-        let client_id = sanitize_input(&client_id);
-        let redirect_uri = sanitize_input(&redirect_uri);
-        let scope = sanitize_input(&scope);
+    pub fn create_profile(&mut self, params: ProfileParams) -> Result<()> {
+        let name = sanitize_input(&params.name);
+        let client_id = sanitize_input(&params.client_id);
+        let redirect_uri = sanitize_input(&params.redirect_uri);
+        let scope = sanitize_input(&params.scope);
         
-        let client_secret = client_secret.map(|s| sanitize_input(&s));
-        let discovery_uri = discovery_uri.map(|s| sanitize_input(&s));
-        let authorization_endpoint = authorization_endpoint.map(|s| sanitize_input(&s));
-        let token_endpoint = token_endpoint.map(|s| sanitize_input(&s));
+        let client_secret = params.client_secret.map(|s| sanitize_input(&s));
+        let discovery_uri = params.discovery_uri.map(|s| sanitize_input(&s));
+        let authorization_endpoint = params.authorization_endpoint.map(|s| sanitize_input(&s));
+        let token_endpoint = params.token_endpoint.map(|s| sanitize_input(&s));
 
         if name.is_empty() {
             return Err(OidcError::Config("Profile name cannot be empty".to_string()));
@@ -74,26 +75,16 @@ impl ProfileManager {
         Ok(())
     }
 
-    pub fn update_profile(
-        &mut self,
-        name: String,
-        client_id: String,
-        client_secret: Option<String>,
-        redirect_uri: String,
-        scope: String,
-        discovery_uri: Option<String>,
-        authorization_endpoint: Option<String>,
-        token_endpoint: Option<String>,
-    ) -> Result<()> {
-        let name = sanitize_input(&name);
-        let client_id = sanitize_input(&client_id);
-        let redirect_uri = sanitize_input(&redirect_uri);
-        let scope = sanitize_input(&scope);
+    pub fn update_profile(&mut self, params: ProfileParams) -> Result<()> {
+        let name = sanitize_input(&params.name);
+        let client_id = sanitize_input(&params.client_id);
+        let redirect_uri = sanitize_input(&params.redirect_uri);
+        let scope = sanitize_input(&params.scope);
         
-        let client_secret = client_secret.map(|s| sanitize_input(&s));
-        let discovery_uri = discovery_uri.map(|s| sanitize_input(&s));
-        let authorization_endpoint = authorization_endpoint.map(|s| sanitize_input(&s));
-        let token_endpoint = token_endpoint.map(|s| sanitize_input(&s));
+        let client_secret = params.client_secret.map(|s| sanitize_input(&s));
+        let discovery_uri = params.discovery_uri.map(|s| sanitize_input(&s));
+        let authorization_endpoint = params.authorization_endpoint.map(|s| sanitize_input(&s));
+        let token_endpoint = params.token_endpoint.map(|s| sanitize_input(&s));
 
         validate_profile_input(
             &client_id,
@@ -159,8 +150,7 @@ impl ProfileManager {
         for (name, profile) in imported_config.profiles {
             if self.config.profiles.contains_key(&name) && !overwrite {
                 return Err(OidcError::ProfileExists(format!(
-                    "Profile '{}' already exists. Use --overwrite to replace it.",
-                    name
+                    "Profile '{name}' already exists. Use --overwrite to replace it."
                 )));
             }
 
@@ -216,16 +206,16 @@ mod tests {
     fn test_create_profile() {
         let mut manager = create_test_profile_manager();
         
-        let result = manager.create_profile(
-            "test".to_string(),
-            "test-client".to_string(),
-            Some("test-secret".to_string()),
-            "http://localhost:8080/callback".to_string(),
-            "openid profile email".to_string(),
-            Some("https://example.com/.well-known/openid-configuration".to_string()),
-            None,
-            None,
-        );
+        let result = manager.create_profile(ProfileParams {
+            name: "test".to_string(),
+            client_id: "test-client".to_string(),
+            client_secret: Some("test-secret".to_string()),
+            redirect_uri: "http://localhost:8080/callback".to_string(),
+            scope: "openid profile email".to_string(),
+            discovery_uri: Some("https://example.com/.well-known/openid-configuration".to_string()),
+            authorization_endpoint: None,
+            token_endpoint: None,
+        });
         
         assert!(result.is_ok());
         assert!(manager.get_profile("test").is_ok());
@@ -235,27 +225,27 @@ mod tests {
     fn test_create_duplicate_profile() {
         let mut manager = create_test_profile_manager();
         
-        manager.create_profile(
-            "test".to_string(),
-            "test-client".to_string(),
-            None,
-            "http://localhost:8080/callback".to_string(),
-            "openid".to_string(),
-            Some("https://example.com/.well-known/openid-configuration".to_string()),
-            None,
-            None,
-        ).unwrap();
+        manager.create_profile(ProfileParams {
+            name: "test".to_string(),
+            client_id: "test-client".to_string(),
+            client_secret: None,
+            redirect_uri: "http://localhost:8080/callback".to_string(),
+            scope: "openid".to_string(),
+            discovery_uri: Some("https://example.com/.well-known/openid-configuration".to_string()),
+            authorization_endpoint: None,
+            token_endpoint: None,
+        }).unwrap();
         
-        let result = manager.create_profile(
-            "test".to_string(),
-            "test-client-2".to_string(),
-            None,
-            "http://localhost:8080/callback".to_string(),
-            "openid".to_string(),
-            Some("https://example.com/.well-known/openid-configuration".to_string()),
-            None,
-            None,
-        );
+        let result = manager.create_profile(ProfileParams {
+            name: "test".to_string(),
+            client_id: "test-client-2".to_string(),
+            client_secret: None,
+            redirect_uri: "http://localhost:8080/callback".to_string(),
+            scope: "openid".to_string(),
+            discovery_uri: Some("https://example.com/.well-known/openid-configuration".to_string()),
+            authorization_endpoint: None,
+            token_endpoint: None,
+        });
         
         assert!(result.is_err());
     }
@@ -264,16 +254,16 @@ mod tests {
     fn test_delete_profile() {
         let mut manager = create_test_profile_manager();
         
-        manager.create_profile(
-            "test".to_string(),
-            "test-client".to_string(),
-            None,
-            "http://localhost:8080/callback".to_string(),
-            "openid".to_string(),
-            Some("https://example.com/.well-known/openid-configuration".to_string()),
-            None,
-            None,
-        ).unwrap();
+        manager.create_profile(ProfileParams {
+            name: "test".to_string(),
+            client_id: "test-client".to_string(),
+            client_secret: None,
+            redirect_uri: "http://localhost:8080/callback".to_string(),
+            scope: "openid".to_string(),
+            discovery_uri: Some("https://example.com/.well-known/openid-configuration".to_string()),
+            authorization_endpoint: None,
+            token_endpoint: None,
+        }).unwrap();
         
         assert!(manager.delete_profile("test").is_ok());
         assert!(manager.get_profile("test").is_err());
@@ -283,16 +273,16 @@ mod tests {
     fn test_rename_profile() {
         let mut manager = create_test_profile_manager();
         
-        manager.create_profile(
-            "test".to_string(),
-            "test-client".to_string(),
-            None,
-            "http://localhost:8080/callback".to_string(),
-            "openid".to_string(),
-            Some("https://example.com/.well-known/openid-configuration".to_string()),
-            None,
-            None,
-        ).unwrap();
+        manager.create_profile(ProfileParams {
+            name: "test".to_string(),
+            client_id: "test-client".to_string(),
+            client_secret: None,
+            redirect_uri: "http://localhost:8080/callback".to_string(),
+            scope: "openid".to_string(),
+            discovery_uri: Some("https://example.com/.well-known/openid-configuration".to_string()),
+            authorization_endpoint: None,
+            token_endpoint: None,
+        }).unwrap();
         
         assert!(manager.rename_profile("test", "new-test".to_string()).is_ok());
         assert!(manager.get_profile("test").is_err());

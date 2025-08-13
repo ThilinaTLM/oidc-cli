@@ -18,18 +18,18 @@ impl ProfileStorage {
         }
 
         let content = fs::read_to_string(&config_path)
-            .map_err(|e| OidcError::Profile(format!("Failed to read config file: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to read config file: {e}")))?;
 
         if content.trim().is_empty() {
             return Ok(Config::new());
         }
 
         let config: Config = serde_json::from_str(&content)
-            .map_err(|e| OidcError::Profile(format!("Failed to parse config file: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to parse config file: {e}")))?;
 
         for (name, profile) in &config.profiles {
             profile.validate()
-                .map_err(|e| OidcError::Profile(format!("Invalid profile '{}': {}", name, e)))?;
+                .map_err(|e| OidcError::Profile(format!("Invalid profile '{name}': {e}")))?;
         }
 
         Ok(config)
@@ -41,14 +41,14 @@ impl ProfileStorage {
 
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir)
-                .map_err(|e| OidcError::Profile(format!("Failed to create config directory: {}", e)))?;
+                .map_err(|e| OidcError::Profile(format!("Failed to create config directory: {e}")))?;
         }
 
         let json = serde_json::to_string_pretty(config)
-            .map_err(|e| OidcError::Profile(format!("Failed to serialize config: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to serialize config: {e}")))?;
 
         fs::write(&config_path, json)
-            .map_err(|e| OidcError::Profile(format!("Failed to write config file: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to write config file: {e}")))?;
 
         Self::set_secure_permissions(&config_path)?;
 
@@ -57,10 +57,10 @@ impl ProfileStorage {
 
     pub fn export_config(config: &Config, file_path: &Path) -> Result<()> {
         let json = serde_json::to_string_pretty(config)
-            .map_err(|e| OidcError::Profile(format!("Failed to serialize config: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to serialize config: {e}")))?;
 
         fs::write(file_path, json)
-            .map_err(|e| OidcError::Profile(format!("Failed to write export file: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to write export file: {e}")))?;
 
         Self::set_secure_permissions(file_path)?;
 
@@ -69,18 +69,18 @@ impl ProfileStorage {
 
     pub fn import_config(file_path: &Path) -> Result<Config> {
         if !file_path.exists() {
-            return Err(OidcError::Profile(format!("Import file not found: {:?}", file_path)));
+            return Err(OidcError::Profile(format!("Import file not found: {file_path:?}")));
         }
 
         let content = fs::read_to_string(file_path)
-            .map_err(|e| OidcError::Profile(format!("Failed to read import file: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to read import file: {e}")))?;
 
         let config: Config = serde_json::from_str(&content)
-            .map_err(|e| OidcError::Profile(format!("Failed to parse import file: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to parse import file: {e}")))?;
 
         for (name, profile) in &config.profiles {
             profile.validate()
-                .map_err(|e| OidcError::Profile(format!("Invalid imported profile '{}': {}", name, e)))?;
+                .map_err(|e| OidcError::Profile(format!("Invalid imported profile '{name}': {e}")))?;
         }
 
         Ok(config)
@@ -89,13 +89,13 @@ impl ProfileStorage {
     #[cfg(unix)]
     fn set_secure_permissions(file_path: &Path) -> Result<()> {
         let metadata = fs::metadata(file_path)
-            .map_err(|e| OidcError::Profile(format!("Failed to get file metadata: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to get file metadata: {e}")))?;
         
         let mut permissions = metadata.permissions();
         permissions.set_mode(0o600);
         
         fs::set_permissions(file_path, permissions)
-            .map_err(|e| OidcError::Profile(format!("Failed to set file permissions: {}", e)))?;
+            .map_err(|e| OidcError::Profile(format!("Failed to set file permissions: {e}")))?;
         
         Ok(())
     }

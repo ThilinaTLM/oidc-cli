@@ -35,17 +35,17 @@ impl Profile {
 
         if let Some(ref discovery_uri) = self.discovery_uri {
             Url::parse(discovery_uri)
-                .map_err(|_| OidcError::Config(format!("Invalid discovery URI: {}", discovery_uri)))?;
+                .map_err(|_| OidcError::Config(format!("Invalid discovery URI: {discovery_uri}")))?;
         }
 
         if let Some(ref auth_endpoint) = self.authorization_endpoint {
             Url::parse(auth_endpoint)
-                .map_err(|_| OidcError::Config(format!("Invalid authorization endpoint: {}", auth_endpoint)))?;
+                .map_err(|_| OidcError::Config(format!("Invalid authorization endpoint: {auth_endpoint}")))?;
         }
 
         if let Some(ref token_endpoint) = self.token_endpoint {
             Url::parse(token_endpoint)
-                .map_err(|_| OidcError::Config(format!("Invalid token endpoint: {}", token_endpoint)))?;
+                .map_err(|_| OidcError::Config(format!("Invalid token endpoint: {token_endpoint}")))?;
         }
 
         if self.discovery_uri.is_none() 

@@ -10,7 +10,7 @@ mod server;
 use clap::Parser;
 use cli::{Cli, Commands};
 use error::{OidcError, Result};
-use profile::ProfileManager;
+use profile::{ProfileManager, ProfileParams};
 use std::collections::HashMap;
 use std::io::{self, Write};
 use tokio::time::{timeout, Duration};
@@ -26,7 +26,7 @@ async fn main() {
     
     if let Err(e) = run(cli).await {
         if !matches!(e, OidcError::Cancelled) {
-            eprintln!("Error: {}", e);
+            eprintln!("Error: {e}");
             std::process::exit(1);
         }
     }
@@ -56,16 +56,18 @@ async fn run(cli: Cli) -> Result<()> {
         } => {
             handle_create(
                 &mut profile_manager, 
-                name, 
-                client_id, 
-                client_secret, 
-                redirect_uri, 
-                scope, 
-                discovery_uri, 
-                auth_endpoint, 
-                token_endpoint,
-                non_interactive,
-                is_quiet
+                CreateParams {
+                    name,
+                    client_id,
+                    client_secret,
+                    redirect_uri,
+                    scope,
+                    discovery_uri,
+                    auth_endpoint,
+                    token_endpoint,
+                    non_interactive,
+                    quiet: is_quiet,
+                }
             ).await
         }
         Commands::Edit { name } => handle_edit(&mut profile_manager, name, is_quiet).await,
@@ -109,7 +111,7 @@ async fn handle_login(
         let mut server = CallbackServer::new(port, &profile.redirect_uri)?;
         
         if verbose {
-            println!("Starting callback server on port {}", port);
+            println!("Starting callback server on port {port}");
         }
         
         let mut receiver = server.start().await?;
@@ -202,23 +204,25 @@ fn display_tokens(token_response: &auth::TokenResponse, copy: bool) -> Result<()
     println!("Access Token: {}", token_response.access_token);
     
     if let Some(ref token_type) = Some(&token_response.token_type) {
-        println!("Token Type: {}", token_type);
+        println!("Token Type: {token_type}");
     }
     
     if let Some(expires_in) = token_response.expires_in {
-        println!("Expires In: {} seconds", expires_in);
+        println!("Expires In: {expires_in} seconds");
     }
     
+    println!();
+    
     if let Some(ref refresh_token) = token_response.refresh_token {
-        println!("Refresh Token: {}", refresh_token);
+        println!("Refresh Token: {refresh_token}");
     }
     
     if let Some(ref id_token) = token_response.id_token {
-        println!("ID Token: {}", id_token);
+        println!("ID Token: {id_token}");
     }
     
     if let Some(ref scope) = token_response.scope {
-        println!("Scope: {}", scope);
+        println!("Scope: {scope}");
     }
     
     if copy {
@@ -252,56 +256,60 @@ fn handle_list(profile_manager: ProfileManager, quiet: bool) -> Result<()> {
     
     if quiet {
         for profile in profiles {
-            println!("{}", profile);
+            println!("{profile}");
         }
     } else {
         println!("Available profiles:");
         for profile in profiles {
-            println!("  • {}", profile);
+            println!("  • {profile}");
         }
     }
     
     Ok(())
 }
 
+pub struct CreateParams {
+    pub name: String,
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
+    pub redirect_uri: Option<String>,
+    pub scope: Option<String>,
+    pub discovery_uri: Option<String>,
+    pub auth_endpoint: Option<String>,
+    pub token_endpoint: Option<String>,
+    pub non_interactive: bool,
+    pub quiet: bool,
+}
+
 async fn handle_create(
     profile_manager: &mut ProfileManager,
-    name: String,
-    client_id: Option<String>,
-    client_secret: Option<String>,
-    redirect_uri: Option<String>,
-    scope: Option<String>,
-    discovery_uri: Option<String>,
-    auth_endpoint: Option<String>,
-    token_endpoint: Option<String>,
-    non_interactive: bool,
-    quiet: bool,
+    params: CreateParams,
 ) -> Result<()> {
-    if non_interactive {
-        let client_id = client_id.ok_or_else(|| OidcError::Config("--client-id is required in non-interactive mode".to_string()))?;
-        let redirect_uri = redirect_uri.ok_or_else(|| OidcError::Config("--redirect-uri is required in non-interactive mode".to_string()))?;
-        let scope = scope.ok_or_else(|| OidcError::Config("--scope is required in non-interactive mode".to_string()))?;
+    if params.non_interactive {
+        let client_id = params.client_id.ok_or_else(|| OidcError::Config("--client-id is required in non-interactive mode".to_string()))?;
+        let redirect_uri = params.redirect_uri.ok_or_else(|| OidcError::Config("--redirect-uri is required in non-interactive mode".to_string()))?;
+        let scope = params.scope.ok_or_else(|| OidcError::Config("--scope is required in non-interactive mode".to_string()))?;
         
-        if discovery_uri.is_none() && (auth_endpoint.is_none() || token_endpoint.is_none()) {
+        if params.discovery_uri.is_none() && (params.auth_endpoint.is_none() || params.token_endpoint.is_none()) {
             return Err(OidcError::Config("Either --discovery-uri or both --auth-endpoint and --token-endpoint are required in non-interactive mode".to_string()));
         }
         
-        profile_manager.create_profile(
-            name.clone(),
+        profile_manager.create_profile(ProfileParams {
+            name: params.name.clone(),
             client_id,
-            client_secret,
+            client_secret: params.client_secret,
             redirect_uri,
             scope,
-            discovery_uri,
-            auth_endpoint,
-            token_endpoint,
-        )?;
+            discovery_uri: params.discovery_uri,
+            authorization_endpoint: params.auth_endpoint,
+            token_endpoint: params.token_endpoint,
+        })?;
         
-        if !quiet {
-            println!("Profile '{}' created successfully.", name);
+        if !params.quiet {
+            println!("Profile '{}' created successfully.", params.name);
         }
     } else {
-        create_profile_interactive(profile_manager, name, quiet).await?;
+        create_profile_interactive(profile_manager, params.name, params.quiet).await?;
     }
     
     Ok(())
@@ -313,7 +321,7 @@ async fn create_profile_interactive(
     quiet: bool,
 ) -> Result<()> {
     if !quiet {
-        println!("Creating new profile '{}'", name);
+        println!("Creating new profile '{name}'");
         println!("Press Ctrl+C to cancel at any time");
         println!();
     }
@@ -351,20 +359,20 @@ async fn create_profile_interactive(
         (None, Some(auth_endpoint), Some(token_endpoint))
     };
     
-    profile_manager.create_profile(
-        name.clone(),
+    profile_manager.create_profile(ProfileParams {
+        name: name.clone(),
         client_id,
         client_secret,
         redirect_uri,
         scope,
         discovery_uri,
-        auth_endpoint,
+        authorization_endpoint: auth_endpoint,
         token_endpoint,
-    )?;
+    })?;
     
     if !quiet {
         println!();
-        println!("✓ Profile '{}' created successfully!", name);
+        println!("✓ Profile '{name}' created successfully!");
     }
     
     Ok(())
@@ -378,7 +386,7 @@ async fn handle_edit(
     let profile = profile_manager.get_profile(&name)?.clone();
     
     if !quiet {
-        println!("Editing profile '{}'", name);
+        println!("Editing profile '{name}'");
         println!("Press Enter to keep current value, or enter new value:");
         println!();
     }
@@ -401,19 +409,19 @@ async fn handle_edit(
         (None, auth_endpoint, token_endpoint)
     };
     
-    profile_manager.update_profile(
-        name.clone(),
+    profile_manager.update_profile(ProfileParams {
+        name: name.clone(),
         client_id,
         client_secret,
         redirect_uri,
         scope,
         discovery_uri,
-        auth_endpoint,
+        authorization_endpoint: auth_endpoint,
         token_endpoint,
-    )?;
+    })?;
     
     if !quiet {
-        println!("✓ Profile '{}' updated successfully!", name);
+        println!("✓ Profile '{name}' updated successfully!");
     }
     
     Ok(())
@@ -428,7 +436,7 @@ fn handle_delete(
     profile_manager.get_profile(&name)?;
     
     if !force && !quiet {
-        print!("Are you sure you want to delete profile '{}'? (y/N): ", name);
+        print!("Are you sure you want to delete profile '{name}'? (y/N): ");
         io::stdout().flush().unwrap();
         
         let mut input = String::new();
@@ -443,7 +451,7 @@ fn handle_delete(
     profile_manager.delete_profile(&name)?;
     
     if !quiet {
-        println!("✓ Profile '{}' deleted successfully.", name);
+        println!("✓ Profile '{name}' deleted successfully.");
     }
     
     Ok(())
@@ -458,7 +466,7 @@ fn handle_rename(
     profile_manager.rename_profile(&old_name, new_name.clone())?;
     
     if !quiet {
-        println!("✓ Profile '{}' renamed to '{}' successfully.", old_name, new_name);
+        println!("✓ Profile '{old_name}' renamed to '{new_name}' successfully.");
     }
     
     Ok(())
@@ -482,7 +490,7 @@ fn handle_export(
     profile_manager.export_profiles(&file, profile_names)?;
     
     if !quiet {
-        println!("✓ Profiles exported to {:?} successfully.", file);
+        println!("✓ Profiles exported to {file:?} successfully.");
     }
     
     Ok(())
@@ -495,7 +503,7 @@ fn handle_import(
     quiet: bool,
 ) -> Result<()> {
     if !file.exists() {
-        return Err(OidcError::Profile(format!("Import file not found: {:?}", file)));
+        return Err(OidcError::Profile(format!("Import file not found: {file:?}")));
     }
     
     let imported_names = profile_manager.import_profiles(&file, overwrite)?;
@@ -503,7 +511,7 @@ fn handle_import(
     if !quiet {
         println!("✓ Imported {} profile(s) from {:?}:", imported_names.len(), file);
         for name in imported_names {
-            println!("  • {}", name);
+            println!("  • {name}");
         }
     }
     
@@ -595,7 +603,7 @@ async fn handle_manual_code_entry(quiet: bool) -> Result<String> {
 
 fn prompt_input(prompt: &str, required: bool) -> Result<String> {
     loop {
-        print!("{}: ", prompt);
+        print!("{prompt}: ");
         io::stdout().flush().unwrap();
         
         let mut input = String::new();
@@ -612,7 +620,7 @@ fn prompt_input(prompt: &str, required: bool) -> Result<String> {
 }
 
 fn prompt_input_with_default(prompt: &str, default: &str) -> Result<String> {
-    print!("{} [{}]: ", prompt, default);
+    print!("{prompt} [{default}]: ");
     io::stdout().flush().unwrap();
     
     let mut input = String::new();
@@ -627,7 +635,7 @@ fn prompt_input_with_default(prompt: &str, default: &str) -> Result<String> {
 }
 
 fn prompt_input_with_current(prompt: &str, current: &str) -> Result<String> {
-    print!("{} [{}]: ", prompt, current);
+    print!("{prompt} [{current}]: ");
     io::stdout().flush().unwrap();
     
     let mut input = String::new();
@@ -642,7 +650,7 @@ fn prompt_input_with_current(prompt: &str, current: &str) -> Result<String> {
 }
 
 fn prompt_optional_input(prompt: &str) -> Result<Option<String>> {
-    print!("{}: ", prompt);
+    print!("{prompt}: ");
     io::stdout().flush().unwrap();
     
     let mut input = String::new();
@@ -658,7 +666,7 @@ fn prompt_optional_input(prompt: &str) -> Result<Option<String>> {
 
 fn prompt_optional_input_with_current(prompt: &str, current: Option<&str>) -> Result<Option<String>> {
     let display_current = current.unwrap_or("none");
-    print!("{} [{}]: ", prompt, display_current);
+    print!("{prompt} [{display_current}]: ");
     io::stdout().flush().unwrap();
     
     let mut input = String::new();

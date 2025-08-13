@@ -26,19 +26,19 @@ impl DiscoveryDocument {
     pub fn supports_pkce(&self) -> bool {
         self.code_challenge_methods_supported
             .as_ref()
-            .map_or(false, |methods| methods.contains(&"S256".to_string()))
+            .is_some_and(|methods| methods.contains(&"S256".to_string()))
     }
 
     pub fn supports_authorization_code(&self) -> bool {
         self.response_types_supported
             .as_ref()
-            .map_or(true, |types| types.contains(&"code".to_string()))
+            .is_none_or(|types| types.contains(&"code".to_string()))
     }
 }
 
 pub async fn discover_endpoints(discovery_uri: &str) -> Result<DiscoveryDocument> {
     let url = Url::parse(discovery_uri)
-        .map_err(|_| OidcError::Discovery(format!("Invalid discovery URI: {}", discovery_uri)))?;
+        .map_err(|_| OidcError::Discovery(format!("Invalid discovery URI: {discovery_uri}")))?;
 
     let client = Client::builder()
         .timeout(Duration::from_secs(30))
@@ -58,7 +58,7 @@ pub async fn discover_endpoints(discovery_uri: &str) -> Result<DiscoveryDocument
     }
 
     let discovery_doc: DiscoveryDocument = response.json().await
-        .map_err(|e| OidcError::Discovery(format!("Failed to parse discovery document: {}", e)))?;
+        .map_err(|e| OidcError::Discovery(format!("Failed to parse discovery document: {e}")))?;
 
     validate_discovery_document(&discovery_doc)?;
 

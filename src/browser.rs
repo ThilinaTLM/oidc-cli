@@ -4,7 +4,7 @@ pub fn open_browser(url: &str) -> Result<()> {
     match webbrowser::open(url) {
         Ok(_) => Ok(()),
         Err(e) => {
-            eprintln!("Failed to open browser automatically: {}", e);
+            eprintln!("Failed to open browser automatically: {e}");
             Err(OidcError::BrowserFailed)
         }
     }
@@ -23,7 +23,7 @@ pub fn open_browser_with_fallback(url: &str, quiet: bool) -> Result<()> {
                 println!("Unable to open browser automatically.");
                 println!("Please manually open the following URL in your browser:");
                 println!();
-                println!("{}", url);
+                println!("{url}");
                 println!();
             }
             Ok(())

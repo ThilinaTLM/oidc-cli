@@ -84,7 +84,7 @@ pub fn validate_scope(scope: &str) -> Result<()> {
         }
         
         if !scope_value.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.' || c == ':') {
-            return Err(OidcError::Config(format!("Invalid scope value '{}': must contain only alphanumeric characters, underscores, hyphens, dots, or colons", scope_value)));
+            return Err(OidcError::Config(format!("Invalid scope value '{scope_value}': must contain only alphanumeric characters, underscores, hyphens, dots, or colons")));
         }
     }
     
@@ -97,7 +97,7 @@ pub fn validate_discovery_uri(discovery_uri: &str) -> Result<()> {
     }
     
     let url = Url::parse(discovery_uri)
-        .map_err(|_| OidcError::Config(format!("Invalid discovery URI: {}", discovery_uri)))?;
+        .map_err(|_| OidcError::Config(format!("Invalid discovery URI: {discovery_uri}")))?;
     
     if url.scheme() != "https" {
         return Err(OidcError::Config("Discovery URI must use HTTPS".to_string()));
@@ -112,18 +112,18 @@ pub fn validate_discovery_uri(discovery_uri: &str) -> Result<()> {
 
 pub fn validate_endpoint_url(endpoint: &str, endpoint_type: &str) -> Result<()> {
     if endpoint.is_empty() {
-        return Err(OidcError::Config(format!("{} cannot be empty", endpoint_type)));
+        return Err(OidcError::Config(format!("{endpoint_type} cannot be empty")));
     }
     
     let url = Url::parse(endpoint)
-        .map_err(|_| OidcError::Config(format!("Invalid {} URL: {}", endpoint_type, endpoint)))?;
+        .map_err(|_| OidcError::Config(format!("Invalid {endpoint_type} URL: {endpoint}")))?;
     
     if url.scheme() != "https" {
-        return Err(OidcError::Config(format!("{} must use HTTPS", endpoint_type)));
+        return Err(OidcError::Config(format!("{endpoint_type} must use HTTPS")));
     }
     
     if url.host_str().is_none() {
-        return Err(OidcError::Config(format!("{} must have a valid host", endpoint_type)));
+        return Err(OidcError::Config(format!("{endpoint_type} must have a valid host")));
     }
     
     Ok(())
@@ -134,13 +134,12 @@ pub fn validate_endpoint_configuration(
     authorization_endpoint: Option<&str>,
     token_endpoint: Option<&str>,
 ) -> Result<()> {
-    if discovery_uri.is_none() {
-        if authorization_endpoint.is_none() || token_endpoint.is_none() {
+    if discovery_uri.is_none()
+        && (authorization_endpoint.is_none() || token_endpoint.is_none()) {
             return Err(OidcError::Config(
                 "Either discovery URI or both authorization and token endpoints must be provided".to_string()
             ));
         }
-    }
     
     Ok(())
 }

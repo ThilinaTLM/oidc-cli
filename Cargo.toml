@@ -3,6 +3,10 @@ name = "oidc-cli"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+clipboard = ["dep:clipboard"]
+
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
 tokio = { version = "1.0", features = ["full"] }
@@ -19,6 +23,7 @@ hyper = { version = "0.14", features = ["full"] }
 urlencoding = "2.1"
 anyhow = "1.0"
 thiserror = "1.0"
+clipboard = { version = "0.5", optional = true }
 
 [dev-dependencies]
 tempfile = "3.0"

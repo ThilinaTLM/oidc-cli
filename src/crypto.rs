@@ -42,7 +42,7 @@ pub fn create_code_challenge(verifier: &str) -> Result<String> {
     hasher.update(verifier.as_bytes());
     let digest = hasher.finalize();
     
-    Ok(URL_SAFE_NO_PAD.encode(&digest))
+    Ok(URL_SAFE_NO_PAD.encode(digest))
 }
 
 pub fn generate_state() -> Result<String> {
