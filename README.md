@@ -191,18 +191,6 @@ The tool is built with a modular architecture:
 - `cli.rs` - Command-line interface definitions
 - `config.rs` - Configuration structures and validation
 
-## Requirements Compliance
-
-This implementation satisfies all 200+ functional requirements specified in REQ.md, including:
-
-- **FR-AUTH-001 to FR-AUTH-007**: OAuth 2.0 Authorization Code flow with PKCE
-- **FR-HTTP-001 to FR-HTTP-005**: HTTP server management
-- **FR-PROFILE-001 to FR-PROFILE-017**: Complete profile management
-- **FR-CLI-001 to FR-CLI-017**: Full CLI interface
-- **FR-SEC-001 to FR-SEC-010**: Security requirements
-- **FR-ERR-001 to FR-ERR-012**: Error handling
-- **FR-PLATFORM-001 to FR-PLATFORM-009**: Cross-platform support
-
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License
