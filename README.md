@@ -8,7 +8,7 @@ A command-line application for OAuth 2.0/OpenID Connect authentication with PKCE
 
 See the CLI in action with this quick demonstration showing profile creation and authentication:
 
-[![OIDC CLI Demo](assets/simple-example-use.webm)](assets/simple-example-use.webm)
+[![OIDC CLI Demo](assets/simple-example-use.mp4)](assets/simple-example-use.mp4)
 
 *Click to view the video demonstration*
 
