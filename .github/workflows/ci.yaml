@@ -9,16 +9,19 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  CARGO_INCREMENTAL: 0
+  CARGO_INCREMENTAL: 0 # Disable incremental compilation for CI - reduces cache size and improves caching efficiency
+  CARGO_PROFILE_DEV_DEBUG: 0 # Disable debug info to speed up builds and reduce cache size
+  CARGO_PROFILE_TEST_DEBUG: 0
 
 jobs:
-  # Fast syntax and lint checks
   check:
     name: Check & Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-arm64
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+
+      - name: 🦀 Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
@@ -30,30 +33,67 @@ jobs:
       - name: 🔍 Check formatting
         run: cargo fmt --all -- --check
 
-      - name: 🔍 Check compilation
-        run: cargo check --all-targets --all-features
+      - name: 🔍 Check compilation (fast check, no codegen)
+        run: cargo check --all-targets --all-features --locked
 
       - name: 📎 Run clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --all-features --locked -- -D warnings
 
-  # Parallel builds and tests for multiple platforms
-  build:
-    name: Build & Test (${{ matrix.name }})
-    runs-on: ${{ matrix.os }}
+  test:
+    name: Test
+    runs-on: ubuntu-latest-arm64
     needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 🗂️ Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          key: test
+
+      - name: ⚡ Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: ⚡ Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: ⚡ Configure sccache
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+
+      - name: 🔨 Compile tests
+        run: cargo test --no-run --locked
+
+      - name: 🧪 Run tests
+        run: cargo nextest run --locked
+
+  build:
+    name: Build Release (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    needs: [check, test]
+    if: github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'test-release')
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: x86_64-unknown-linux-gnu
             target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+            os: ubuntu-latest-arm64
           - name: x86_64-pc-windows-msvc
             target: x86_64-pc-windows-msvc
             os: windows-latest
           - name: x86_64-apple-darwin
             target: x86_64-apple-darwin
             os: macos-latest
+
+    env:
+      CARGO_PROFILE_RELEASE_LTO: true
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: 1
 
     steps:
       - name: 📥 Checkout code
@@ -67,11 +107,22 @@ jobs:
       - name: 🗂️ Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ matrix.name }}-${{ hashFiles('**/Cargo.lock') }}
+          key: release-${{ matrix.name }}-${{ hashFiles('**/Cargo.lock') }}
           cache-on-failure: true
 
-      - name: 🔨 Build
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: ⚡ Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
 
-      - name: 🧪 Run tests
-        run: cargo test --target ${{ matrix.target }}
+      - name: ⚡ Configure sccache
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+
+      - name: 🔨 Build release
+        run: cargo build --release --target ${{ matrix.target }} --locked
+
+      - name: 📦 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: target/${{ matrix.target }}/release/
