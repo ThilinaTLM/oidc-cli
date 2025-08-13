@@ -4,6 +4,14 @@ A command-line application for OAuth 2.0/OpenID Connect authentication with PKCE
 
 [![CI](https://github.com/ThilinaTLM/oidc-cli/actions/workflows/ci.yaml/badge.svg)](https://github.com/ThilinaTLM/oidc-cli/actions/workflows/ci.yaml)
 
+## Video Demonstration
+
+See the CLI in action with this quick demonstration showing profile creation and authentication:
+
+[![OIDC CLI Demo](assets/simple-example-use.webm)](assets/simple-example-use.webm)
+
+*Click to view the video demonstration*
+
 ## Features
 
 - **OAuth 2.0/OIDC Authentication** - Full support for Authorization Code flow with PKCE
