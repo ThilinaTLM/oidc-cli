@@ -26,6 +26,7 @@ pub struct CallbackResult {
     pub access_token: Option<String>,
 }
 
+#[derive(Clone)]
 pub struct CallbackServer {
     addr: SocketAddr,
     sender: Option<mpsc::Sender<CallbackResult>>,
@@ -136,14 +137,9 @@ async fn handle_request(
                         };
 
                         let _ = tx.send(result).await;
-                        
-                        // Check if we have a token stored to include in the response
-                        let token_guard = token_store.read().await;
-                        if let Some(ref token) = *token_guard {
-                            return Ok(create_success_response_with_token(Some(token)));
-                        } else {
-                            return Ok(create_success_response());
-                        }
+
+                        // Always serve success page immediately, let JavaScript polling handle token display
+                        return Ok(create_success_response());
                     }
                 }
 
@@ -161,7 +157,7 @@ async fn handle_request(
                         .status(StatusCode::OK)
                         .header("Content-Type", "application/json; charset=utf-8")
                         .header("Cache-Control", "no-cache, no-store, must-revalidate")
-                        .body(Body::from(format!(r#"{{"token":"{}"}}"#, token)))
+                        .body(Body::from(format!(r#"{{"token":"{token}"}}"#)))
                         .unwrap());
                 } else {
                     return Ok(Response::builder()
@@ -206,7 +202,7 @@ fn create_success_response() -> Response<Body> {
 
 fn create_success_response_with_token(access_token: Option<&str>) -> Response<Body> {
     let mut html = include_str!("templates/success.html").to_string();
-    
+
     if let Some(token) = access_token {
         html = html.replace("{access_token}", token);
         html = html.replace("{show_copy_button}", "true");
@@ -249,4 +245,3 @@ fn create_error_response_with_status(status: StatusCode, message: &str) -> Respo
         .body(Body::from(html))
         .unwrap()
 }
-

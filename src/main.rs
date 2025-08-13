@@ -151,34 +151,83 @@ async fn handle_login(
         (code, auth_request.state.clone(), None)
     };
 
-    if verbose {
-        println!("Received authorization code, exchanging for tokens...");
-    }
-
-    let token_response = oauth_client
-        .exchange_code_for_tokens(
-            &code,
-            &state,
-            &auth_request.state,
-            &auth_request.pkce_challenge.verifier,
-        )
-        .await?;
-
     if let Some(server) = server_opt {
-        server.set_token(token_response.access_token.clone()).await;
-        
-        if !quiet {
-            println!("Token is now available in the browser. You can copy it from the success page.");
-            println!("The browser window will remain functional for 30 seconds...");
-        }
-        
-        tokio::time::sleep(tokio::time::Duration::from_secs(35)).await;
-    }
+        // Exchange tokens in background while browser shows success page
+        let server_clone = server.clone();
+        let oauth_client_clone = oauth_client.clone();
+        let code_clone = code.clone();
+        let state_clone = state.clone();
+        let auth_state_clone = auth_request.state.clone();
+        let verifier_clone = auth_request.pkce_challenge.verifier.clone();
 
-    if quiet {
-        println!("{}", serde_json::to_string(&token_response).unwrap());
+        tokio::spawn(async move {
+            if verbose {
+                println!("Received authorization code, exchanging for tokens...");
+            }
+
+            match oauth_client_clone
+                .exchange_code_for_tokens(
+                    &code_clone,
+                    &state_clone,
+                    &auth_state_clone,
+                    &verifier_clone,
+                )
+                .await
+            {
+                Ok(token_response) => {
+                    // Display tokens in terminal
+                    if quiet {
+                        println!("{}", serde_json::to_string(&token_response).unwrap());
+                    } else {
+                        display_tokens(&token_response, copy).unwrap_or_else(|e| {
+                            eprintln!("Error displaying tokens: {e}");
+                        });
+                    }
+
+                    // Set token on server so browser can access it
+                    server_clone
+                        .set_token(token_response.access_token.clone())
+                        .await;
+
+                    if !quiet {
+                        println!();
+                        println!("Token is now available in the browser.");
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error exchanging code for tokens: {e}");
+                }
+            }
+        });
+
+        if !quiet {
+            println!("Authentication successful! Check your browser for the access token.");
+            println!("Tokens will be displayed in the browser once ready...");
+        }
+
+        // Wait a shorter time for token to be available, then exit
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
     } else {
-        display_tokens(&token_response, copy)?;
+        // For non-localhost redirect URIs, exchange tokens normally
+        if verbose {
+            println!("Received authorization code, exchanging for tokens...");
+        }
+
+        let token_response = oauth_client
+            .exchange_code_for_tokens(
+                &code,
+                &state,
+                &auth_request.state,
+                &auth_request.pkce_challenge.verifier,
+            )
+            .await?;
+
+        // Display tokens immediately after successful exchange
+        if quiet {
+            println!("{}", serde_json::to_string(&token_response).unwrap());
+        } else {
+            display_tokens(&token_response, copy)?;
+        }
     }
 
     Ok(())
@@ -732,4 +781,3 @@ fn prompt_optional_input_with_current(
         Ok(Some(input.to_string()))
     }
 }
-

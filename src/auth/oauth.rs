@@ -24,6 +24,7 @@ pub struct AuthorizationRequest {
     pub pkce_challenge: PkceChallenge,
 }
 
+#[derive(Clone)]
 pub struct OAuthClient {
     client: Client,
     profile: Profile,

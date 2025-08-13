@@ -1,4 +1,4 @@
-use oidc_cli::{is_localhost_redirect_uri, extract_port_from_redirect_uri, parse_query_params};
+use oidc_cli::{extract_port_from_redirect_uri, is_localhost_redirect_uri, parse_query_params};
 
 #[test]
 fn test_is_localhost_redirect_uri() {

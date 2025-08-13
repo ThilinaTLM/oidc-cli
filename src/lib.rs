@@ -56,5 +56,5 @@ pub fn parse_query_params(query: &str) -> HashMap<String, String> {
 }
 
 // Re-export from server.rs for testing
-pub use server::{extract_path_from_redirect_uri, CallbackServer, CallbackResult};
 pub use server::parse_query_params as server_parse_query_params;
+pub use server::{extract_path_from_redirect_uri, CallbackResult, CallbackServer};

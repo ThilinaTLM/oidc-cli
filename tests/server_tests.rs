@@ -1,4 +1,4 @@
-use oidc_cli::{server_parse_query_params, extract_path_from_redirect_uri, CallbackServer};
+use oidc_cli::{extract_path_from_redirect_uri, server_parse_query_params, CallbackServer};
 
 #[test]
 fn test_parse_query_params() {
