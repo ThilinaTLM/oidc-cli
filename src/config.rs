@@ -134,14 +134,14 @@ pub fn get_config_dir_with_override(override_dir: Option<PathBuf>) -> Result<Pat
     if let Some(dir) = override_dir {
         return Ok(dir);
     }
-    
+
     // Check for test mode environment variable
     if std::env::var("OIDC_CLI_TEST_MODE").is_ok() {
         if let Ok(temp_dir) = std::env::var("OIDC_CLI_TEST_DIR") {
             return Ok(PathBuf::from(temp_dir));
         }
     }
-    
+
     dirs::config_dir()
         .map(|mut path| {
             path.push("oidc-cli");

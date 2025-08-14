@@ -8,7 +8,7 @@ use crate::auth::{discover_endpoints, generate_state, PkceChallenge};
 use crate::config::Profile;
 use crate::error::{OidcError, Result};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,
     pub token_type: String,

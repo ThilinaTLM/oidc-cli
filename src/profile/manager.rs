@@ -214,7 +214,7 @@ mod tests {
         let temp_dir = tempfile::tempdir().unwrap();
         let temp_path = temp_dir.path().to_path_buf();
         let _ = temp_dir.keep(); // Keep the temporary directory
-        
+
         ProfileManager {
             config: Config::new(),
             test_dir: Some(temp_path),

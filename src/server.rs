@@ -7,6 +7,7 @@ use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
 use url::Url;
 
+use crate::auth::TokenResponse;
 use crate::error::Result;
 
 pub fn extract_path_from_redirect_uri(redirect_uri: &str) -> String {
@@ -31,7 +32,7 @@ pub struct CallbackServer {
     addr: SocketAddr,
     sender: Option<mpsc::Sender<CallbackResult>>,
     callback_path: String,
-    token_store: Arc<RwLock<Option<String>>>,
+    token_store: Arc<RwLock<Option<TokenResponse>>>,
 }
 
 impl CallbackServer {
@@ -92,9 +93,9 @@ impl CallbackServer {
         self.addr.port()
     }
 
-    pub async fn set_token(&self, token: String) {
+    pub async fn set_tokens(&self, token_response: TokenResponse) {
         let mut store = self.token_store.write().await;
-        *store = Some(token);
+        *store = Some(token_response);
     }
 }
 
@@ -102,7 +103,7 @@ async fn handle_request(
     req: Request<Body>,
     tx: Arc<mpsc::Sender<CallbackResult>>,
     callback_path: Arc<String>,
-    token_store: Arc<RwLock<Option<String>>>,
+    token_store: Arc<RwLock<Option<TokenResponse>>>,
 ) -> std::result::Result<Response<Body>, Infallible> {
     match req.method() {
         &Method::GET => {
@@ -149,20 +150,29 @@ async fn handle_request(
                 ));
             }
 
-            if uri.path() == "/token" {
+            if uri.path() == "/tokens" {
                 let token_guard = token_store.read().await;
-                if let Some(ref token) = *token_guard {
+                if let Some(ref token_response) = *token_guard {
+                    let json_response = serde_json::json!({
+                        "access_token": token_response.access_token,
+                        "id_token": token_response.id_token,
+                        "refresh_token": token_response.refresh_token,
+                        "token_type": token_response.token_type,
+                        "expires_in": token_response.expires_in,
+                        "scope": token_response.scope
+                    });
+
                     return Ok(Response::builder()
                         .status(StatusCode::OK)
                         .header("Content-Type", "application/json; charset=utf-8")
                         .header("Cache-Control", "no-cache, no-store, must-revalidate")
-                        .body(Body::from(format!(r#"{{"token":"{token}"}}"#)))
+                        .body(Body::from(json_response.to_string()))
                         .unwrap());
                 } else {
                     return Ok(Response::builder()
                         .status(StatusCode::NOT_FOUND)
                         .header("Content-Type", "application/json; charset=utf-8")
-                        .body(Body::from(r#"{"error":"Token not available"}"#))
+                        .body(Body::from(r#"{"error":"Tokens not available"}"#))
                         .unwrap());
                 }
             }
@@ -196,18 +206,23 @@ pub fn parse_query_params(query: &str) -> HashMap<String, String> {
 }
 
 fn create_success_response() -> Response<Body> {
-    create_success_response_with_token(None)
+    create_success_response_with_tokens(None)
 }
 
-fn create_success_response_with_token(access_token: Option<&str>) -> Response<Body> {
+fn create_success_response_with_tokens(token_response: Option<&TokenResponse>) -> Response<Body> {
     let mut html = include_str!("templates/success.html").to_string();
 
-    if let Some(token) = access_token {
-        html = html.replace("{access_token}", token);
-        html = html.replace("{show_copy_button}", "true");
+    if let Some(tokens) = token_response {
+        html = html.replace("{access_token}", &tokens.access_token);
+        html = html.replace("{id_token}", tokens.id_token.as_deref().unwrap_or(""));
+        html = html.replace(
+            "{refresh_token}",
+            tokens.refresh_token.as_deref().unwrap_or(""),
+        );
     } else {
         html = html.replace("{access_token}", "");
-        html = html.replace("{show_copy_button}", "false");
+        html = html.replace("{id_token}", "");
+        html = html.replace("{refresh_token}", "");
     }
 
     Response::builder()

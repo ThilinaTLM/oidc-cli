@@ -16,7 +16,10 @@ pub struct CreateParams {
     pub quiet: bool,
 }
 
-pub async fn handle_create(profile_manager: &mut ProfileManager, params: CreateParams) -> Result<()> {
+pub async fn handle_create(
+    profile_manager: &mut ProfileManager,
+    params: CreateParams,
+) -> Result<()> {
     if params.non_interactive {
         let client_id = params.client_id.ok_or_else(|| {
             OidcError::Config("--client-id is required in non-interactive mode".to_string())

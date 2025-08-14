@@ -23,7 +23,8 @@ pub async fn handle_login(
         quiet,
         verbose,
         &WebBrowserOpener,
-    ).await
+    )
+    .await
 }
 
 pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
@@ -122,10 +123,8 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
                         });
                     }
 
-                    // Set token on server so browser can access it
-                    server_clone
-                        .set_token(token_response.access_token.clone())
-                        .await;
+                    // Set tokens on server so browser can access them
+                    server_clone.set_tokens(token_response.clone()).await;
 
                     if !quiet {
                         println!();
@@ -169,4 +168,3 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
 
     Ok(())
 }
-

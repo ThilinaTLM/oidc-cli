@@ -49,6 +49,13 @@ pub struct MockBrowserOpener {
 }
 
 #[cfg(test)]
+impl Default for MockBrowserOpener {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(test)]
 impl MockBrowserOpener {
     pub fn new() -> Self {
         Self {
@@ -82,7 +89,7 @@ mod tests {
         let result = mock.open_with_fallback("not-a-valid-url", true);
         // Mock implementation should always succeed
         assert!(result.is_ok());
-        
+
         let urls = mock.get_opened_urls();
         assert_eq!(urls.len(), 1);
         assert_eq!(urls[0], "not-a-valid-url");
@@ -93,7 +100,7 @@ mod tests {
         let mock = MockBrowserOpener::new();
         let result = mock.open_with_fallback("https://example.com", true);
         assert!(result.is_ok());
-        
+
         let urls = mock.get_opened_urls();
         assert_eq!(urls.len(), 1);
         assert_eq!(urls[0], "https://example.com");
@@ -102,10 +109,10 @@ mod tests {
     #[test]
     fn test_mock_browser_opener() {
         let mock = MockBrowserOpener::new();
-        
+
         assert!(mock.open_with_fallback("https://example.com", true).is_ok());
         assert!(mock.open_with_fallback("https://test.com", true).is_ok());
-        
+
         let urls = mock.get_opened_urls();
         assert_eq!(urls.len(), 2);
         assert_eq!(urls[0], "https://example.com");

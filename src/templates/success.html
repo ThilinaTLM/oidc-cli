@@ -102,6 +102,53 @@
         font-size: 0.875rem;
         font-weight: 500;
         color: #495057;
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.2s ease;
+      }
+
+      .token-header:hover {
+        background: #e9ecef;
+      }
+
+      .token-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .token-header-right {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .toggle-button {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .toggle-button:hover {
+        background: #dee2e6;
+        color: #495057;
+      }
+
+      .toggle-icon {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.2s ease;
+      }
+
+      .toggle-icon.expanded {
+        transform: rotate(180deg);
       }
 
       .token-display {
@@ -116,6 +163,33 @@
         overflow-y: auto;
         line-height: 1.4;
         margin: 0;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+      }
+
+      .token-display.collapsed {
+        max-height: 0;
+        opacity: 0;
+        padding: 0 .5rem;
+        overflow: hidden;
+      }
+
+      .token-preview {
+        font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        font-size: 0.75rem;
+        color: #6c757d;
+        padding: .5rem;
+        background: #f8f9fa;
+        font-style: italic;
+        border: none;
+        margin: 0;
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+      }
+
+      .token-preview.hidden-preview {
+        max-height: 0;
+        opacity: 0;
+        padding: 0 .5rem;
+        overflow: hidden;
       }
 
       .copy-button {
@@ -198,35 +272,159 @@
       </p>
       
       <div class="token-section" id="tokenSection">
+        <!-- Access Token -->
         <div class="token-container">
-          <div class="token-header">
-            <span>Access Token</span>
-            <button class="copy-button" id="copyButton" onclick="copyToken()">
-              <svg class="copy-icon" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
-                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
-              </svg>
-              <span id="copyText">Copy</span>
-            </button>
+          <div class="token-header" onclick="toggleTokenDisplay('access')" onkeydown="handleTokenHeaderKeydown(event, 'access')" tabindex="0" role="button" aria-expanded="false" aria-controls="accessTokenDisplay" aria-label="Toggle access token visibility">
+            <div class="token-header-left">
+              <span>Access Token</span>
+              <button class="toggle-button" tabindex="-1">
+                <svg class="toggle-icon" id="accessToggleIcon" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="token-header-right">
+              <button class="copy-button" id="accessCopyButton" onclick="copyToken(event, 'access')">
+                <svg class="copy-icon" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                  <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+                </svg>
+                <span id="accessCopyText">Copy</span>
+              </button>
+            </div>
           </div>
-          <div class="token-display" id="tokenDisplay">{access_token}</div>
+          <div class="token-preview" id="accessTokenPreview">Click to view access token</div>
+          <div class="token-display collapsed" id="accessTokenDisplay">{access_token}</div>
+        </div>
+
+        <!-- ID Token -->
+        <div class="token-container" id="idTokenContainer" style="display: none;">
+          <div class="token-header" onclick="toggleTokenDisplay('id')" onkeydown="handleTokenHeaderKeydown(event, 'id')" tabindex="0" role="button" aria-expanded="false" aria-controls="idTokenDisplay" aria-label="Toggle ID token visibility">
+            <div class="token-header-left">
+              <span>ID Token</span>
+              <button class="toggle-button" tabindex="-1">
+                <svg class="toggle-icon" id="idToggleIcon" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="token-header-right">
+              <button class="copy-button" id="idCopyButton" onclick="copyToken(event, 'id')">
+                <svg class="copy-icon" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                  <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+                </svg>
+                <span id="idCopyText">Copy</span>
+              </button>
+            </div>
+          </div>
+          <div class="token-preview" id="idTokenPreview">Click to view ID token</div>
+          <div class="token-display collapsed" id="idTokenDisplay">{id_token}</div>
+        </div>
+
+        <!-- Refresh Token -->
+        <div class="token-container" id="refreshTokenContainer" style="display: none;">
+          <div class="token-header" onclick="toggleTokenDisplay('refresh')" onkeydown="handleTokenHeaderKeydown(event, 'refresh')" tabindex="0" role="button" aria-expanded="false" aria-controls="refreshTokenDisplay" aria-label="Toggle refresh token visibility">
+            <div class="token-header-left">
+              <span>Refresh Token</span>
+              <button class="toggle-button" tabindex="-1">
+                <svg class="toggle-icon" id="refreshToggleIcon" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="token-header-right">
+              <button class="copy-button" id="refreshCopyButton" onclick="copyToken(event, 'refresh')">
+                <svg class="copy-icon" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+                  <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+                </svg>
+                <span id="refreshCopyText">Copy</span>
+              </button>
+            </div>
+          </div>
+          <div class="token-preview" id="refreshTokenPreview">Click to view refresh token</div>
+          <div class="token-display collapsed" id="refreshTokenDisplay">{refresh_token}</div>
         </div>
       </div>
     </div>
     
     <script>
       const tokenSection = document.getElementById('tokenSection');
-      const tokenDisplay = document.getElementById('tokenDisplay');
-      let currentToken = '{access_token}';
       
-      if (!currentToken || currentToken === '{access_token}') {
-        tokenSection.style.display = 'none';
-        pollForToken();
-      } else {
-        tokenSection.style.display = 'block';
+      // Token data storage
+      let tokens = {
+        access_token: '{access_token}',
+        id_token: '{id_token}',
+        refresh_token: '{refresh_token}'
+      };
+      
+      // Expansion state for each token type
+      let expandedStates = {
+        access: false,
+        id: false,
+        refresh: false
+      };
+      
+      // Initialize display
+      initializeTokenDisplay();
+      
+      function initializeTokenDisplay() {
+        // Check if any tokens are available
+        const hasAccessToken = tokens.access_token && tokens.access_token !== '{access_token}';
+        const hasIdToken = tokens.id_token && tokens.id_token !== '{id_token}';
+        const hasRefreshToken = tokens.refresh_token && tokens.refresh_token !== '{refresh_token}';
+        
+        if (!hasAccessToken && !hasIdToken && !hasRefreshToken) {
+          tokenSection.style.display = 'none';
+          pollForTokens();
+        } else {
+          tokenSection.style.display = 'block';
+          
+          // Show/hide token containers based on availability
+          if (hasIdToken) {
+            document.getElementById('idTokenContainer').style.display = 'block';
+            updateTokenPreview('id', tokens.id_token);
+          }
+          if (hasRefreshToken) {
+            document.getElementById('refreshTokenContainer').style.display = 'block';
+            updateTokenPreview('refresh', tokens.refresh_token);
+          }
+          if (hasAccessToken) {
+            updateTokenPreview('access', tokens.access_token);
+          }
+        }
       }
       
-      async function pollForToken() {
+      function toggleTokenDisplay(tokenType) {
+        expandedStates[tokenType] = !expandedStates[tokenType];
+        
+        const tokenDisplay = document.getElementById(`${tokenType}TokenDisplay`);
+        const tokenPreview = document.getElementById(`${tokenType}TokenPreview`);
+        const toggleIcon = document.getElementById(`${tokenType}ToggleIcon`);
+        const tokenHeader = document.querySelector(`[aria-controls="${tokenType}TokenDisplay"]`);
+        
+        if (expandedStates[tokenType]) {
+          tokenDisplay.classList.remove('collapsed');
+          tokenPreview.classList.add('hidden-preview');
+          toggleIcon.classList.add('expanded');
+          tokenHeader.setAttribute('aria-expanded', 'true');
+        } else {
+          tokenDisplay.classList.add('collapsed');
+          tokenPreview.classList.remove('hidden-preview');
+          toggleIcon.classList.remove('expanded');
+          tokenHeader.setAttribute('aria-expanded', 'false');
+        }
+      }
+      
+      function handleTokenHeaderKeydown(event, tokenType) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleTokenDisplay(tokenType);
+        }
+      }
+      
+      async function pollForTokens() {
         let attempts = 0;
         const maxAttempts = 30;
         
@@ -236,18 +434,17 @@
           }
           
           try {
-            const response = await fetch('/token');
+            const response = await fetch('/tokens');
             if (response.ok) {
               const data = await response.json();
-              if (data.token) {
-                currentToken = data.token;
-                tokenDisplay.textContent = currentToken;
+              if (data.access_token || data.id_token || data.refresh_token) {
+                updateTokensFromResponse(data);
                 tokenSection.style.display = 'block';
                 return;
               }
             }
           } catch (error) {
-            console.log('Polling for token...', error);
+            console.log('Polling for tokens...', error);
           }
           
           attempts++;
@@ -257,10 +454,47 @@
         poll();
       }
       
-      async function copyToken() {
-        const copyButton = document.getElementById('copyButton');
-        const copyText = document.getElementById('copyText');
-        const token = currentToken;
+      function updateTokensFromResponse(data) {
+        if (data.access_token) {
+          tokens.access_token = data.access_token;
+          document.getElementById('accessTokenDisplay').textContent = data.access_token;
+          updateTokenPreview('access', data.access_token);
+        }
+        
+        if (data.id_token) {
+          tokens.id_token = data.id_token;
+          document.getElementById('idTokenDisplay').textContent = data.id_token;
+          document.getElementById('idTokenContainer').style.display = 'block';
+          updateTokenPreview('id', data.id_token);
+        }
+        
+        if (data.refresh_token) {
+          tokens.refresh_token = data.refresh_token;
+          document.getElementById('refreshTokenDisplay').textContent = data.refresh_token;
+          document.getElementById('refreshTokenContainer').style.display = 'block';
+          updateTokenPreview('refresh', data.refresh_token);
+        }
+      }
+      
+      function updateTokenPreview(tokenType, token) {
+        const tokenPreview = document.getElementById(`${tokenType}TokenPreview`);
+        const tokenName = tokenType === 'access' ? 'access token' : 
+                         tokenType === 'id' ? 'ID token' : 'refresh token';
+        
+        if (token && token.length > 20) {
+          tokenPreview.textContent = `${token.substring(0, 20)}... (click to view full ${tokenName})`;
+        } else if (token) {
+          tokenPreview.textContent = `Click to view ${tokenName}`;
+        }
+      }
+      
+      async function copyToken(event, tokenType) {
+        event.stopPropagation(); // Prevent triggering toggle when clicking copy
+        
+        const copyButton = document.getElementById(`${tokenType}CopyButton`);
+        const copyText = document.getElementById(`${tokenType}CopyText`);
+        const token = tokens[tokenType === 'access' ? 'access_token' : 
+                            tokenType === 'id' ? 'id_token' : 'refresh_token'];
         
         try {
           if (navigator.clipboard && window.isSecureContext) {
@@ -289,7 +523,7 @@
           console.error('Failed to copy token:', err);
           copyText.textContent = 'Copy failed';
           setTimeout(() => {
-            copyText.textContent = 'Copy Token';
+            copyText.textContent = 'Copy';
           }, 2000);
         }
       }
