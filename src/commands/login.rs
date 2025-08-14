@@ -114,7 +114,6 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
                 .await
             {
                 Ok(token_response) => {
-                    // Display tokens in terminal
                     if quiet {
                         println!("{}", serde_json::to_string(&token_response).unwrap());
                     } else {
@@ -123,7 +122,6 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
                         });
                     }
 
-                    // Set tokens on server so browser can access them
                     server_clone.set_tokens(token_response.clone()).await;
 
                     if !quiet {
@@ -142,10 +140,8 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
             println!("Tokens will be displayed in the browser once ready...");
         }
 
-        // Wait a shorter time for token to be available, then exit
         tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
     } else {
-        // For non-localhost redirect URIs, exchange tokens normally
         if verbose {
             println!("Received authorization code, exchanging for tokens...");
         }
