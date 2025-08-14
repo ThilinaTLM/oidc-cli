@@ -31,7 +31,7 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 ```bash
 # Download the Linux binary
-wget https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.1.0/oidc-cli-x86_64-unknown-linux-gnu
+wget https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.2.0/oidc-cli-x86_64-unknown-linux-gnu
 
 # Make it executable
 chmod +x oidc-cli-x86_64-unknown-linux-gnu
@@ -44,7 +44,7 @@ sudo mv oidc-cli-x86_64-unknown-linux-gnu /usr/local/bin/oidc-cli
 
 ```cmd
 # Download the Windows binary
-curl -L -o oidc-cli.exe https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.1.0/oidc-cli-x86_64-pc-windows-msvc.exe
+curl -L -o oidc-cli.exe https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.2.0/oidc-cli-x86_64-pc-windows-msvc.exe
 
 # Run from current directory
 ./oidc-cli.exe
@@ -56,7 +56,7 @@ curl -L -o oidc-cli.exe https://github.com/ThilinaTLM/oidc-cli/releases/download
 
 ```bash
 # Download the macOS binary
-curl -L -o oidc-cli https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.1.0/oidc-cli-x86_64-apple-darwin
+curl -L -o oidc-cli https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.2.0/oidc-cli-x86_64-apple-darwin
 
 # Make it executable
 chmod +x oidc-cli
