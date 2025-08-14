@@ -16,3 +16,8 @@ pub use utils::url::{extract_port_from_redirect_uri, is_localhost_redirect_uri, 
 // Re-export from server.rs for testing
 pub use server::parse_query_params as server_parse_query_params;
 pub use server::{extract_path_from_redirect_uri, CallbackResult, CallbackServer};
+
+// Re-export profile and browser modules for testing
+pub use profile::ProfileManager;
+#[cfg(test)]
+pub use browser::MockBrowserOpener;

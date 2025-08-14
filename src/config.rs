@@ -130,7 +130,18 @@ impl Config {
     }
 }
 
-pub fn get_config_dir() -> Result<PathBuf> {
+pub fn get_config_dir_with_override(override_dir: Option<PathBuf>) -> Result<PathBuf> {
+    if let Some(dir) = override_dir {
+        return Ok(dir);
+    }
+    
+    // Check for test mode environment variable
+    if std::env::var("OIDC_CLI_TEST_MODE").is_ok() {
+        if let Ok(temp_dir) = std::env::var("OIDC_CLI_TEST_DIR") {
+            return Ok(PathBuf::from(temp_dir));
+        }
+    }
+    
     dirs::config_dir()
         .map(|mut path| {
             path.push("oidc-cli");
@@ -139,8 +150,8 @@ pub fn get_config_dir() -> Result<PathBuf> {
         .ok_or_else(|| OidcError::Config("Could not determine config directory".to_string()))
 }
 
-pub fn get_config_file_path() -> Result<PathBuf> {
-    let mut path = get_config_dir()?;
+pub fn get_config_file_path_with_override(override_dir: Option<PathBuf>) -> Result<PathBuf> {
+    let mut path = get_config_dir_with_override(override_dir)?;
     path.push("profiles.json");
     Ok(path)
 }

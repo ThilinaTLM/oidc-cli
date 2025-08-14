@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::config::{Config, Profile};
 use crate::error::{OidcError, Result};
@@ -20,12 +20,17 @@ pub struct ProfileParams {
 
 pub struct ProfileManager {
     config: Config,
+    test_dir: Option<PathBuf>,
 }
 
 impl ProfileManager {
     pub fn new() -> Result<Self> {
-        let config = ProfileStorage::load_config()?;
-        Ok(ProfileManager { config })
+        Self::new_with_test_dir(None)
+    }
+
+    pub fn new_with_test_dir(test_dir: Option<PathBuf>) -> Result<Self> {
+        let config = ProfileStorage::load_config_with_override(test_dir.clone())?;
+        Ok(ProfileManager { config, test_dir })
     }
 
     pub fn list_profiles(&self) -> Vec<&String> {
@@ -188,7 +193,7 @@ impl ProfileManager {
     }
 
     fn save(&self) -> Result<()> {
-        ProfileStorage::save_config(&self.config)
+        ProfileStorage::save_config_with_override(&self.config, self.test_dir.clone())
     }
 }
 
@@ -196,6 +201,7 @@ impl Clone for ProfileManager {
     fn clone(&self) -> Self {
         ProfileManager {
             config: self.config.clone(),
+            test_dir: self.test_dir.clone(),
         }
     }
 }
@@ -205,8 +211,13 @@ mod tests {
     use super::*;
 
     fn create_test_profile_manager() -> ProfileManager {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let temp_path = temp_dir.path().to_path_buf();
+        let _ = temp_dir.keep(); // Keep the temporary directory
+        
         ProfileManager {
             config: Config::new(),
+            test_dir: Some(temp_path),
         }
     }
 

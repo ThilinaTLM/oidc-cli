@@ -1,5 +1,5 @@
 use crate::auth::OAuthClient;
-use crate::browser::open_browser_with_fallback;
+use crate::browser::{BrowserOpener, WebBrowserOpener};
 use crate::error::{OidcError, Result};
 use crate::profile::ProfileManager;
 use crate::server::CallbackServer;
@@ -15,6 +15,26 @@ pub async fn handle_login(
     quiet: bool,
     verbose: bool,
 ) -> Result<()> {
+    handle_login_with_browser_opener(
+        profile_manager,
+        profile_name,
+        port,
+        copy,
+        quiet,
+        verbose,
+        &WebBrowserOpener,
+    ).await
+}
+
+pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
+    profile_manager: ProfileManager,
+    profile_name: Option<String>,
+    port: Option<u16>,
+    copy: bool,
+    quiet: bool,
+    verbose: bool,
+    browser_opener: &B,
+) -> Result<()> {
     let profile_name = match profile_name {
         Some(name) => name,
         None => select_profile(&profile_manager, quiet)?,
@@ -29,7 +49,7 @@ pub async fn handle_login(
         println!("Initiating OAuth 2.0 authorization flow...");
     }
 
-    open_browser_with_fallback(&auth_request.authorization_url, quiet)?;
+    browser_opener.open_with_fallback(&auth_request.authorization_url, quiet)?;
 
     let (code, state, server_opt) = if is_localhost_redirect_uri(&profile.redirect_uri) {
         // Use callback server for localhost URLs

@@ -1,17 +1,17 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-use crate::config::{get_config_dir, get_config_file_path, Config};
+use crate::config::{get_config_dir_with_override, get_config_file_path_with_override, Config};
 use crate::error::{OidcError, Result};
 
 pub struct ProfileStorage;
 
 impl ProfileStorage {
-    pub fn load_config() -> Result<Config> {
-        let config_path = get_config_file_path()?;
+    pub fn load_config_with_override(override_dir: Option<PathBuf>) -> Result<Config> {
+        let config_path = get_config_file_path_with_override(override_dir)?;
 
         if !config_path.exists() {
             return Ok(Config::new());
@@ -36,9 +36,9 @@ impl ProfileStorage {
         Ok(config)
     }
 
-    pub fn save_config(config: &Config) -> Result<()> {
-        let config_dir = get_config_dir()?;
-        let config_path = get_config_file_path()?;
+    pub fn save_config_with_override(config: &Config, override_dir: Option<PathBuf>) -> Result<()> {
+        let config_dir = get_config_dir_with_override(override_dir.clone())?;
+        let config_path = get_config_file_path_with_override(override_dir)?;
 
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).map_err(|e| {
