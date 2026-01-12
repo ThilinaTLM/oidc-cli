@@ -11,6 +11,7 @@ pub mod ui;
 pub mod utils;
 
 // Re-export main utilities for backward compatibility and testing
+pub use auth::TokenExport;
 pub use utils::url::{
     extract_port_from_redirect_uri, is_localhost_redirect_uri, parse_query_params,
 };
