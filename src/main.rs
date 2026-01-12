@@ -39,7 +39,23 @@ async fn run(cli: Cli) -> Result<()> {
             profile,
             port,
             copy,
-        } => handle_login(profile_manager, profile, port, copy, is_quiet, is_verbose).await,
+            json,
+            output,
+        } => {
+            handle_login(
+                profile_manager,
+                LoginOptions {
+                    profile_name: profile,
+                    port,
+                    copy,
+                    quiet: is_quiet,
+                    verbose: is_verbose,
+                    json,
+                    output,
+                },
+            )
+            .await
+        }
         Commands::List => handle_list(profile_manager, is_quiet),
         Commands::Create {
             name,

@@ -18,6 +18,43 @@ pub struct TokenResponse {
     pub scope: Option<String>,
 }
 
+/// JSON export format for tokens with absolute expiration timestamp
+#[derive(Debug, Clone, Serialize)]
+pub struct TokenExport {
+    pub access_token: String,
+    pub token_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+}
+
+impl TokenExport {
+    /// Create a TokenExport from a TokenResponse, converting expires_in to expires_at
+    pub fn from_response(response: &TokenResponse) -> Self {
+        let expires_at = response.expires_in.map(|secs| {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("System time before UNIX epoch")
+                .as_secs()
+                + secs
+        });
+
+        Self {
+            access_token: response.access_token.clone(),
+            token_type: response.token_type.clone(),
+            expires_at,
+            refresh_token: response.refresh_token.clone(),
+            id_token: response.id_token.clone(),
+            scope: response.scope.clone(),
+        }
+    }
+}
+
 pub struct AuthorizationRequest {
     pub authorization_url: String,
     pub state: String,

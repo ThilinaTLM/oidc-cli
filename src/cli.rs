@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -28,6 +28,17 @@ pub enum Commands {
 
         #[arg(long, help = "Copy tokens to clipboard")]
         copy: bool,
+
+        #[arg(long, help = "Output tokens as JSON", action = ArgAction::SetTrue)]
+        json: bool,
+
+        #[arg(
+            short = 'o',
+            long,
+            value_name = "FILE",
+            help = "Write token output to file (implies --json)"
+        )]
+        output: Option<PathBuf>,
     },
 
     #[command(about = "List all available profiles")]

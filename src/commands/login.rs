@@ -1,41 +1,45 @@
-use crate::auth::OAuthClient;
+use crate::auth::{OAuthClient, TokenExport};
 use crate::browser::{BrowserOpener, WebBrowserOpener};
 use crate::error::{OidcError, Result};
 use crate::profile::ProfileManager;
 use crate::server::CallbackServer;
 use crate::ui::{display_tokens, handle_manual_code_entry, select_profile};
 use crate::utils::url::{extract_port_from_redirect_uri, is_localhost_redirect_uri};
+use std::path::PathBuf;
 use tokio::time::{timeout, Duration};
 
-pub async fn handle_login(
+/// Options for the login command
+pub struct LoginOptions {
+    pub profile_name: Option<String>,
+    pub port: Option<u16>,
+    pub copy: bool,
+    pub quiet: bool,
+    pub verbose: bool,
+    pub json: bool,
+    pub output: Option<PathBuf>,
+}
+
+pub async fn handle_login(profile_manager: ProfileManager, options: LoginOptions) -> Result<()> {
+    handle_login_with_browser_opener(profile_manager, options, &WebBrowserOpener).await
+}
+
+pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
     profile_manager: ProfileManager,
-    profile_name: Option<String>,
-    port: Option<u16>,
-    copy: bool,
-    quiet: bool,
-    verbose: bool,
+    options: LoginOptions,
+    browser_opener: &B,
 ) -> Result<()> {
-    handle_login_with_browser_opener(
-        profile_manager,
+    let LoginOptions {
         profile_name,
         port,
         copy,
         quiet,
         verbose,
-        &WebBrowserOpener,
-    )
-    .await
-}
+        json,
+        output,
+    } = options;
 
-pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
-    profile_manager: ProfileManager,
-    profile_name: Option<String>,
-    port: Option<u16>,
-    copy: bool,
-    quiet: bool,
-    verbose: bool,
-    browser_opener: &B,
-) -> Result<()> {
+    // --output implies --json
+    let json_output = json || output.is_some();
     let profile_name = match profile_name {
         Some(name) => name,
         None => select_profile(&profile_manager, quiet)?,
@@ -98,6 +102,7 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
         let state_clone = state.clone();
         let auth_state_clone = auth_request.state.clone();
         let verifier_clone = auth_request.pkce_challenge.verifier.clone();
+        let output_clone = output.clone();
 
         tokio::spawn(async move {
             if verbose {
@@ -114,7 +119,10 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
                 .await
             {
                 Ok(token_response) => {
-                    if quiet {
+                    // Handle JSON output
+                    if json_output {
+                        output_tokens_json(&token_response, output_clone.as_ref(), quiet);
+                    } else if quiet {
                         println!("{}", serde_json::to_string(&token_response).unwrap());
                     } else {
                         display_tokens(&token_response, copy).unwrap_or_else(|e| {
@@ -124,7 +132,7 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
 
                     server_clone.set_tokens(token_response.clone()).await;
 
-                    if !quiet {
+                    if !quiet && !json_output {
                         println!();
                         println!("Token is now available in the browser.");
                     }
@@ -155,7 +163,10 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
             )
             .await?;
 
-        if quiet {
+        // Handle JSON output
+        if json_output {
+            output_tokens_json(&token_response, output.as_ref(), quiet);
+        } else if quiet {
             println!("{}", serde_json::to_string(&token_response).unwrap());
         } else {
             display_tokens(&token_response, copy)?;
@@ -163,4 +174,29 @@ pub async fn handle_login_with_browser_opener<B: BrowserOpener>(
     }
 
     Ok(())
+}
+
+/// Output tokens as JSON to stdout or file
+fn output_tokens_json(
+    token_response: &crate::auth::TokenResponse,
+    output_path: Option<&PathBuf>,
+    quiet: bool,
+) {
+    let export = TokenExport::from_response(token_response);
+    let json_str = serde_json::to_string_pretty(&export).unwrap();
+
+    if let Some(path) = output_path {
+        match std::fs::write(path, &json_str) {
+            Ok(_) => {
+                if !quiet {
+                    println!("Tokens written to {}", path.display());
+                }
+            }
+            Err(e) => {
+                eprintln!("Error writing tokens to file: {e}");
+            }
+        }
+    } else {
+        println!("{json_str}");
+    }
 }
