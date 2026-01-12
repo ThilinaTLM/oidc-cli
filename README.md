@@ -1,140 +1,149 @@
-# OIDC CLI Tool
+# OIDC CLI
 
-A command-line application for OAuth 2.0/OpenID Connect authentication with PKCE support.
+A command-line tool for OAuth 2.0/OpenID Connect authentication with PKCE support.
 
 [![CI](https://github.com/ThilinaTLM/oidc-cli/actions/workflows/ci.yaml/badge.svg)](https://github.com/ThilinaTLM/oidc-cli/actions/workflows/ci.yaml)
+[![Release](https://img.shields.io/github/v/release/ThilinaTLM/oidc-cli)](https://github.com/ThilinaTLM/oidc-cli/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Video Demonstration
+## Table of Contents
 
-See the CLI in action with this quick demonstration showing profile creation and authentication:
-
-[Example: Create Profile & Login](https://github.com/user-attachments/assets/55bb54a5-470e-41f3-ace7-dac2110728b2)
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [JSON Export](#json-export)
+- [Configuration](#configuration)
+- [Security](#security)
+- [Examples](#examples)
+- [Development](#development)
+- [License](#license)
 
 ## Features
 
-- **OAuth 2.0/OIDC Authentication** - Full support for Authorization Code flow with PKCE
-- **Profile Management** - Create, edit, delete, and manage multiple authentication profiles
-- **Discovery Support** - Automatic endpoint discovery via OIDC discovery URIs
-- **Security First** - PKCE with SHA256, state parameter validation, secure random generation
-- **Cross-platform** - Windows, macOS, and Linux support
-- **Browser Integration** - Automatic browser opening with fallback support
-- **Import/Export** - Backup and share profiles securely
-- **Interactive & Scriptable** - Both interactive and quiet modes supported
+- **OAuth 2.0/OIDC** - Authorization Code flow with PKCE (RFC 7636)
+- **Profile Management** - Create, edit, delete, rename, import/export profiles
+- **Auto-Discovery** - Automatic endpoint resolution via OIDC discovery
+- **JSON Export** - Export tokens to stdout or file with `--json` / `--output`
+- **Cross-Platform** - Linux, macOS, and Windows support
+- **Scriptable** - Quiet mode for CI/CD pipelines and scripts
+
+## Demo
+
+https://github.com/user-attachments/assets/55bb54a5-470e-41f3-ace7-dac2110728b2
 
 ## Installation
 
-### Pre-built Binaries
-
-Download the latest release for your platform from [GitHub Releases](https://github.com/ThilinaTLM/oidc-cli/releases):
-
-#### Linux
+### Linux
 
 ```bash
-# Download the Linux binary
-wget https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.2.0/oidc-cli-x86_64-unknown-linux-gnu
-
-# Make it executable
-chmod +x oidc-cli-x86_64-unknown-linux-gnu
-
-# Move to PATH (optional)
-sudo mv oidc-cli-x86_64-unknown-linux-gnu /usr/local/bin/oidc-cli
-```
-
-#### Windows
-
-```cmd
-# Download the Windows binary
-curl -L -o oidc-cli.exe https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.2.0/oidc-cli-x86_64-pc-windows-msvc.exe
-
-# Run from current directory
-./oidc-cli.exe
-
-# Or move to PATH directory for global access
-```
-
-#### macOS
-
-```bash
-# Download the macOS binary
-curl -L -o oidc-cli https://github.com/ThilinaTLM/oidc-cli/releases/download/v0.2.0/oidc-cli-x86_64-apple-darwin
-
-# Make it executable
+curl -L -o oidc-cli https://github.com/ThilinaTLM/oidc-cli/releases/latest/download/oidc-cli-x86_64-unknown-linux-gnu
 chmod +x oidc-cli
-
-# Move to PATH (optional)
 sudo mv oidc-cli /usr/local/bin/
+```
+
+### macOS
+
+```bash
+curl -L -o oidc-cli https://github.com/ThilinaTLM/oidc-cli/releases/latest/download/oidc-cli-x86_64-apple-darwin
+chmod +x oidc-cli
+sudo mv oidc-cli /usr/local/bin/
+```
+
+### Windows
+
+```powershell
+curl -L -o oidc-cli.exe https://github.com/ThilinaTLM/oidc-cli/releases/latest/download/oidc-cli-x86_64-pc-windows-msvc.exe
 ```
 
 ### Build from Source
 
 ```bash
 cargo build --release
-```
-
-The binary will be available at `target/release/oidc-cli` (or `oidc-cli.exe` on Windows).
-
-### Verify Installation
-
-```bash
-oidc-cli --help
+# Binary at target/release/oidc-cli
 ```
 
 ## Quick Start
 
-1. **Create a profile**:
-
 ```bash
+# 1. Create a profile
 oidc-cli create my-profile
-```
 
-2. **List profiles**:
-
-```bash
-oidc-cli list
-```
-
-3. **Authenticate**:
-
-```bash
+# 2. Authenticate
 oidc-cli login my-profile
+
+# 3. Export token as JSON
+oidc-cli login my-profile --json
 ```
 
-## Commands
-
-### Profile Management
-
-- `create <profile>` - Create a new profile (interactive)
-- `list` - List all profiles
-- `edit <profile>` - Edit an existing profile
-- `delete <profile>` - Delete a profile
-- `rename <old> <new>` - Rename a profile
+## Usage
 
 ### Authentication
 
-- `login [profile]` - Start OAuth flow (auto-selects if only one profile)
-- `login <profile> --port 9000` - Use custom callback port
-- `login <profile> --copy` - Copy access token to clipboard
+```bash
+oidc-cli login [PROFILE]           # Login (auto-selects if one profile)
+oidc-cli login my-profile          # Login with specific profile
+oidc-cli login my-profile -p 9000  # Custom callback port
+oidc-cli login my-profile --copy   # Copy access token to clipboard
+```
+
+### JSON Export
+
+```bash
+oidc-cli login my-profile --json              # JSON to stdout
+oidc-cli login my-profile -o tokens.json      # JSON to file
+oidc-cli login my-profile --output tokens.json
+```
+
+Output format:
+
+```json
+{
+  "access_token": "eyJ...",
+  "token_type": "Bearer",
+  "expires_at": 1736712000,
+  "refresh_token": "...",
+  "id_token": "eyJ...",
+  "scope": "openid profile email"
+}
+```
+
+> Note: `expires_at` is a Unix timestamp (absolute), not relative seconds.
+
+### Profile Management
+
+```bash
+oidc-cli create <name>              # Create profile (interactive)
+oidc-cli list                       # List all profiles
+oidc-cli edit <name>                # Edit profile
+oidc-cli delete <name>              # Delete profile
+oidc-cli delete <name> --force      # Delete without confirmation
+oidc-cli rename <old> <new>         # Rename profile
+```
 
 ### Import/Export
 
-- `export <file>` - Export all profiles
-- `export <file> profile1 profile2` - Export specific profiles
-- `import <file>` - Import profiles
-- `import <file> --overwrite` - Import and overwrite existing profiles
+```bash
+oidc-cli export profiles.json                  # Export all profiles
+oidc-cli export profiles.json profile1 profile2  # Export specific profiles
+oidc-cli import profiles.json                  # Import profiles
+oidc-cli import profiles.json --overwrite      # Overwrite existing
+```
 
-### Options
+### Global Options
 
-- `--verbose` - Show detailed output
-- `--quiet` - Minimal output (for scripting)
-- `--help` - Show help
+| Option      | Description                    |
+|-------------|--------------------------------|
+| `--verbose` | Show detailed output           |
+| `--quiet`   | Minimal output (for scripting) |
+| `--help`    | Show help                      |
+| `--version` | Show version                   |
 
-## Profile Configuration
+## Configuration
 
-Profiles support two configuration methods:
+Profiles are stored in your system config directory and support two modes:
 
-### 1. Discovery-based (Recommended)
-
-Uses OIDC discovery to automatically find endpoints:
+### Discovery-based (Recommended)
 
 ```json
 {
@@ -146,14 +155,11 @@ Uses OIDC discovery to automatically find endpoints:
 }
 ```
 
-### 2. Manual Endpoints
-
-Specify endpoints manually:
+### Manual Endpoints
 
 ```json
 {
   "client_id": "your-client-id",
-  "client_secret": "optional-secret",
   "redirect_uri": "http://localhost:8080/callback",
   "scope": "openid profile email",
   "authorization_endpoint": "https://auth.example.com/authorize",
@@ -161,85 +167,57 @@ Specify endpoints manually:
 }
 ```
 
-## Security Features
+## Security
 
-- **PKCE (RFC 7636)**: SHA256 code challenge with 256-bit entropy
-- **State Parameter**: CSRF protection with 128-bit entropy
-- **Input Validation**: All inputs are validated and sanitized
-- **Secure Storage**: Profile files stored with restricted permissions
-- **No Token Persistence**: Tokens are never stored on disk
+| Feature             | Implementation                              |
+|---------------------|---------------------------------------------|
+| PKCE                | SHA256 code challenge, 256-bit entropy      |
+| State Parameter     | CSRF protection, 128-bit entropy            |
+| Input Validation    | All inputs validated and sanitized          |
+| File Permissions    | Profile files stored with restricted access |
+| Token Storage       | Tokens are never persisted to disk          |
 
 ## Examples
-
-### Interactive Profile Creation
-
-```bash
-$ oidc-cli create github
-Creating new profile 'github'
-Press Ctrl+C to cancel at any time
-
-Client ID: your-github-client-id
-Client Secret (optional):
-Redirect URI [http://localhost:8080/callback]:
-Scope [openid profile email]: user:email
-
-Choose configuration method:
-  1. Use discovery URI (recommended)
-  2. Manual endpoint configuration
-Select option (1-2): 2
-
-Authorization Endpoint: https://github.com/login/oauth/authorize
-Token Endpoint: https://github.com/login/oauth/access_token
-
-✓ Profile 'github' created successfully!
-```
 
 ### Non-interactive Profile Creation
 
 ```bash
 oidc-cli create google \
-  --client-id "your-google-client" \
+  --client-id "your-client-id" \
   --redirect-uri "http://localhost:8080/callback" \
   --scope "openid profile email" \
   --discovery-uri "https://accounts.google.com/.well-known/openid-configuration" \
   --non-interactive
 ```
 
-### Authentication Flow
+### Scripting with JSON Export
 
 ```bash
-$ oidc-cli login github
-Initiating OAuth 2.0 authorization flow...
-Opening browser for authentication...
-Waiting for authentication callback...
-Press Ctrl+C to cancel
+# Get access token
+TOKEN=$(oidc-cli login my-profile --json | jq -r '.access_token')
 
-🎉 Authentication successful!
+# Use in API call
+curl -H "Authorization: Bearer $TOKEN" https://api.example.com/user
 
-Access Token: ya29.a0AfH6SMC...
-Token Type: Bearer
-Expires In: 3599 seconds
-Scope: user:email
+# Save tokens to file
+oidc-cli login my-profile -o /tmp/tokens.json
 ```
 
-### Scripting Support
+### Check Token Expiration
 
 ```bash
-# Get just the token response as JSON
-ACCESS_TOKEN=$(oidc-cli login github --quiet | jq -r '.access_token')
+# Get expiration timestamp
+EXPIRES=$(oidc-cli login my-profile --json | jq '.expires_at')
 
-# Use in API calls
-curl -H "Authorization: Bearer $ACCESS_TOKEN" https://api.github.com/user
+# Convert to human-readable
+date -d @$EXPIRES  # Linux
+date -r $EXPIRES   # macOS
 ```
 
 ## Development
 
-For developers interested in contributing or understanding the technical details, see [DEVELOPMENT.md](DEVELOPMENT.md).
-
-## Repository
-
-GitHub: https://github.com/ThilinaTLM/oidc-cli
+See [DEVELOPMENT.md](DEVELOPMENT.md) for architecture details and contribution guidelines.
 
 ## License
 
-MIT License
+MIT License - see [LICENSE](LICENSE) for details.
